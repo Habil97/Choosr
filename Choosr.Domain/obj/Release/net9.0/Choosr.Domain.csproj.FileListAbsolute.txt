@@ -1,0 +1,11 @@
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\bin\Release\net9.0\Choosr.Domain.deps.json
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\bin\Release\net9.0\Choosr.Domain.dll
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\bin\Release\net9.0\Choosr.Domain.pdb
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\Choosr.Domain.GeneratedMSBuildEditorConfig.editorconfig
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\Choosr.Domain.AssemblyInfoInputs.cache
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\Choosr.Domain.AssemblyInfo.cs
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\Choosr.Domain.csproj.CoreCompileInputs.cache
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\Choosr.Domain.dll
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\refint\Choosr.Domain.dll
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\Choosr.Domain.pdb
+c:\Users\HABIL\Desktop\Choosr\Choosr.Domain\obj\Release\net9.0\ref\Choosr.Domain.dll
