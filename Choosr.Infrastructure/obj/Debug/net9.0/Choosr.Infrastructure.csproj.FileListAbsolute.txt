@@ -1,0 +1,17 @@
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\bin\Debug\net9.0\Choosr.Infrastructure.deps.json
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\bin\Debug\net9.0\Choosr.Infrastructure.dll
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\bin\Debug\net9.0\Choosr.Infrastructure.pdb
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\bin\Debug\net9.0\Choosr.Domain.dll
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\bin\Debug\net9.0\Choosr.Domain.pdb
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.AssemblyInfo.cs
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.I.F16FE2CB.Up2Date
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.dll
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\refint\Choosr.Infrastructure.dll
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.pdb
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\ref\Choosr.Infrastructure.dll
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\bin\Debug\net9.0\Choosr.Infrastructure.runtimeconfig.json
+C:\Users\HABIL\Desktop\Choosr\Choosr.Infrastructure\obj\Debug\net9.0\Choosr.Infrastructure.genruntimeconfig.cache
