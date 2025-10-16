@@ -1,0 +1,91 @@
+@model Choosr.Web.ViewModels.QuizDetailViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+  ViewData["Title"] = Model.Title + " | Turnuva";
+  var req = Context.Request;
+  int parsedRounds = 0;
+  if (req.Query.ContainsKey("rounds")) {
+    int.TryParse(req.Query["rounds"], out parsedRounds);
+  }
+  var total = Math.Min(Model.Choices.Count(), parsedRounds > 0 ? parsedRounds : 8);
+  var stageLabel = total >= 64 ? "Son 64" : total >= 32 ? "Son 32" : total >= 16 ? "Son 16" : total >= 8 ? "Çeyrek Final" : total >= 4 ? "Yarı Final" : total == 2 ? "Final" : "Tur";
+  var afToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+ }
+
+@section Head{
+  <link rel="preconnect" href="https://img.youtube.com" crossorigin>
+  <link rel="preconnect" href="https://www.youtube.com" crossorigin>
+  <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
+  <link rel="preconnect" href="https://s.ytimg.com" crossorigin>
+}
+<section class="bracket-play">
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){ document.body.classList.add('play-hide-global-header'); });
+  </script>
+  <div class="play-topbar">
+    <div class="pt-inner">
+      <div class="pt-left">
+        <a href="@Url.Action("Detail","Quiz", new { id = Model.Id })" class="btn-ico" title="Çıkış / Geri"><span class="emoji">←</span></a>
+      </div>
+      <div class="pt-center">
+        <div class="pt-title">@Model.Title</div>
+        @if(!string.IsNullOrWhiteSpace(Model.Description)){<div class="pt-desc">@Model.Description</div>}
+      </div>
+      <div class="pt-right">
+        <button id="btnUndo" class="btn-ico" title="Geri al"><span class="emoji">↶</span></button>
+        <button id="btnRandom" class="btn-ico" title="Zar at (otomatik)"><span class="emoji">🎲</span></button>
+        <button id="btnShare" class="btn-ico" title="Paylaş"><span class="emoji">📤</span></button>
+        <button id="btnFullscreen" class="btn-ico" title="Tam ekran"><span class="emoji">⤢</span></button>
+      </div>
+    </div>
+  </div>
+  <meta name="request-verification-token" content="@afToken" />
+  <div class="bs-top">
+    <div class="spacer"></div>
+    <div class="top-center text-center">
+      <div class="top-progress text-center" style="margin-top:.5rem; display:flex; align-items:center; justify-content:center;">
+        <div id="brProgressBox" class="progress-pill" style="margin:0;">
+          <span id="stagePill">@stageLabel</span>
+          <span class="dot">•</span>
+          <span id="progressCount">0/0</span>
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="bs-arena">
+    <div class="bs-side left">
+      <div class="side-bg" id="leftBg" aria-hidden="true"></div>
+      <div class="choice-card left" id="leftCard" role="button" tabindex="0">
+        <div class="thumb">
+          <div id="leftMedia"></div>
+        </div>
+        <button type="button" class="caption primary" id="leftCap">@Model.Choices.FirstOrDefault()?.Caption</button>
+      </div>
+    </div>
+    <div class="vs-badge">VS</div>
+    <div class="bs-side right">
+      <div class="side-bg" id="rightBg" aria-hidden="true"></div>
+      <div class="choice-card right" id="rightCard" role="button" tabindex="0">
+        <div class="thumb">
+          <div id="rightMedia"></div>
+        </div>
+        <button type="button" class="caption alt" id="rightCap">@Model.Choices.Skip(1).FirstOrDefault()?.Caption</button>
+      </div>
+    </div>
+  </div>
+  <!-- Winner overlay for focused preview -->
+  <div class="winner-overlay" id="winnerOverlay" aria-hidden="true">
+    <img id="winnerOverlayImg" alt="Kazanan görsel" />
+    <div id="winnerOverlayCap" class="overlay-caption" aria-live="polite"></div>
+  </div>
+</section>
+
+<script id="choicesData" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Choices.Select(c=> new { id = c.Id, image = c.ImageUrl, imageWidth = c.ImageWidth, imageHeight = c.ImageHeight, caption = c.Caption, youtube = c.YoutubeUrl })))</script>
+@section Scripts{
+<script nonce="@(Context.Items["CspNonce"])" src="/js/playCommon.js" defer></script>
+<script nonce="@(Context.Items["CspNonce"])" src="/js/playBracket.js" defer></script>
+<script nonce="@(Context.Items["CspNonce"])">window.__playData = { quizId: '@Model.Id', recordUrl: '@Url.Action("Record","Play")/@Model.Id', finishBase: '@Url.Action("Finish","Play")/@Model.Id', bracketUrl: '@Url.Action("Bracket","Play")/@Model.Id' };</script>
+}
+ 

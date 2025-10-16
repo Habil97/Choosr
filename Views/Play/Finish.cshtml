@@ -1,0 +1,52 @@
+@model Choosr.Web.ViewModels.QuizDetailViewModel
+@{
+  ViewData["Title"] = Model.Title + " | Bitti";
+  var winnerId = (Guid?)(ViewBag.WinnerId ?? null);
+  var winner = Model.Choices.FirstOrDefault(c => c.Id == winnerId);
+  var challenge = Context.Request.Query.ContainsKey("challenge") ? (string?)Context.Request.Query["challenge"] : null;
+}
+
+<section class="layout-container py-4">
+  <a class="back-link d-inline-flex align-items-center mb-3 text-decoration-none" asp-controller="Quiz" asp-action="Detail" asp-route-id="@Model.Id">← Quize geri dön</a>
+  <div class="text-center">
+    <div class="mb-2" style="color:#ffd54a;font-weight:900;letter-spacing:.06em;text-transform:uppercase;">Oyun Bitti</div>
+    <h1 class="mb-4" style="font-weight:800;">@Model.Title</h1>
+
+    @if(winner != null){
+      <div class="choice-card mx-auto" style="max-width:720px;">
+        <div class="thumb" style="width:100%;height:auto;">
+          @{ var w = winner.ImageWidth; var h = winner.ImageHeight; var wh = (w.HasValue && h.HasValue) ? $" width=\"{w}\" height=\"{h}\"" : " width=\"1280\" height=\"720\""; }
+          <img src="@winner.ImageUrl" alt="@winner.Caption"@Html.Raw(wh) style="width:100%;height:auto;object-fit:cover;border-radius:10px;border:2px solid rgba(255,255,255,.18);" />
+        </div>
+        <div class="caption alt" style="margin-top:1rem;">@winner.Caption</div>
+      </div>
+    } else {
+      <p>Kazanan belirlenemedi. Yine de oynadığın için teşekkürler!</p>
+    }
+
+    @if(!string.IsNullOrWhiteSpace(challenge)){
+      <div class="mt-4" style="max-width:720px;margin:0 auto;">
+        <label for="challengeLink" class="form-label" style="font-weight:600;">Arkadaşına meydan oku</label>
+        <div class="input-group">
+          <input id="challengeLink" class="form-control" type="text" value="@challenge" readonly>
+          <button id="btnCopyChallenge" class="btn btn-outline-secondary" type="button">Kopyala</button>
+        </div>
+        <small class="text-muted">Aynı eşleşme sırasını denesin diye bu bağlantıyı paylaş.</small>
+      </div>
+      <script>
+        (function(){
+          const btn = document.getElementById('btnCopyChallenge');
+          const inp = document.getElementById('challengeLink');
+          btn?.addEventListener('click', async ()=>{
+            try{ await navigator.clipboard.writeText(inp.value); btn.textContent='Kopyalandı'; setTimeout(()=>btn.textContent='Kopyala', 1200);}catch{}
+          });
+        })();
+      </script>
+    }
+
+    <div class="mt-4 d-flex gap-2 justify-content-center">
+      <a class="btn btn-primary" asp-controller="Play" asp-action="Mode" asp-route-id="@Model.Id">Tekrar Oyna</a>
+      <a class="btn btn-secondary" asp-controller="Quiz" asp-action="Detail" asp-route-id="@Model.Id">Quiz Sayfasına Dön</a>
+    </div>
+  </div>
+</section>

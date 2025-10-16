@@ -1,0 +1,153 @@
+@using Choosr.Domain.Entities
+@model List<Choosr.Web.Controllers.AdminReportItemViewModel>
+@{
+    ViewData["Title"] = "Rapor Yönetimi";
+    var currentFilter = (string?)ViewBag.Filter;
+    string? q = ViewBag.Query as string;
+    var statusCounts = ViewBag.StatusCounts as IDictionary<string,int> ?? new Dictionary<string,int>();
+    string ActiveClass(string key) => string.Equals(currentFilter, key, StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty;
+    int CountFor(string key)
+    {
+        if (string.IsNullOrEmpty(key))
+        {
+            // Hepsi
+            return statusCounts.Values.Sum();
+        }
+        return statusCounts.TryGetValue(key, out var c) ? c : 0;
+    }
+}
+
+<section class="admin-surface">
+@if (TempData["AdminReports.Success"] is string ok && !string.IsNullOrWhiteSpace(ok))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @ok
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+    </div>
+}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h1 class="h3 mb-0">Rapor Yönetimi</h1>
+    <span class="text-muted">Gösterilen: @Model.Count</span>
+    @* Not: Sorgu limitimiz 200 *@
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <ul class="nav nav-pills flex-wrap">
+            <li class="nav-item me-1 mb-1">
+                <a class="nav-link @ActiveClass("")" href="@Url.Action("Index", new { status = (string?)null, q })">
+                    Hepsi <span class="badge bg-secondary ms-1">@CountFor("")</span>
+                </a>
+            </li>
+            <li class="nav-item me-1 mb-1">
+                <a class="nav-link @ActiveClass("New")" href="@Url.Action("Index", new { status = "New", q })">
+                    Yeni <span class="badge bg-warning text-dark ms-1">@CountFor("New")</span>
+                </a>
+            </li>
+            <li class="nav-item me-1 mb-1">
+                <a class="nav-link @ActiveClass("InReview")" href="@Url.Action("Index", new { status = "InReview", q })">
+                    İncelemede <span class="badge bg-info text-dark ms-1">@CountFor("InReview")</span>
+                </a>
+            </li>
+            <li class="nav-item me-1 mb-1">
+                <a class="nav-link @ActiveClass("Resolved")" href="@Url.Action("Index", new { status = "Resolved", q })">
+                    Çözüldü <span class="badge bg-success ms-1">@CountFor("Resolved")</span>
+                </a>
+            </li>
+            <li class="nav-item me-1 mb-1">
+                <a class="nav-link @ActiveClass("Blocked")" href="@Url.Action("Index", new { status = "Blocked", q })">
+                    Engellendi <span class="badge bg-danger ms-1">@CountFor("Blocked")</span>
+                </a>
+            </li>
+        </ul>
+        <form method="get" class="d-flex align-items-center gap-2 ms-auto" role="search">
+            <input type="hidden" name="status" value="@currentFilter" />
+            <input name="q" value="@q" type="search" class="form-control" placeholder="Ara: neden, detay, kullanıcı" />
+            <button type="submit" class="btn btn-outline-primary">Ara</button>
+            <a class="btn btn-outline-secondary" href="@Url.Action("Index")">Sıfırla</a>
+        </form>
+    </div>
+  </div>
+    <div class="card-footer small text-muted">En fazla 200 kayıt gösterilir.</div>
+ </div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Kriterlere uygun rapor bulunamadı.</div>
+}
+else
+{
+    <div class="row row-cols-1 g-3">
+        @foreach (var item in Model)
+        {
+            var r = item.Report;
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-@(r.Status switch { ReportStatus.New => "warning text-dark", ReportStatus.InReview => "info text-dark", ReportStatus.Resolved => "success", ReportStatus.Blocked => "danger", _ => "secondary" })">@r.Status</span>
+                            <span class="text-muted small">@r.TargetType</span>
+                        </div>
+                        <time class="small text-muted" datetime="@r.CreatedAt.ToString("O")">@r.CreatedAt.ToLocalTime().ToString("g")</time>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between gap-3 mb-2">
+                            <div>
+                                <div class="fw-semibold">Hedef</div>
+                                @if (!string.IsNullOrWhiteSpace(item.TargetUrl))
+                                {
+                                    <a href="@item.TargetUrl" target="_blank" rel="noopener">@r.TargetType @r.TargetId</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">@r.TargetType @r.TargetId</span>
+                                }
+                            </div>
+                            <div>
+                                <div class="fw-semibold">Raporlayan</div>
+                                <div>@(string.IsNullOrWhiteSpace(r.ReporterUserName) ? "Anonim" : r.ReporterUserName)</div>
+                                <div class="small text-muted">@r.ReporterIp</div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="fw-semibold">Neden</div>
+                            <div>@r.Reason</div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="fw-semibold">Detay</div>
+                            <div class="text-break">@r.Details</div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="fw-semibold">Moderasyon</div>
+                            <div class="small text-muted">İnceleyen: @r.InReviewBy @if(r.InReviewAt!=null){<text>(@r.InReviewAt?.ToLocalTime().ToString("g"))</text>}</div>
+                            <div class="small text-muted">Çözen: @r.ResolvedBy @if(r.ResolvedAt!=null){<text>(@r.ResolvedAt?.ToLocalTime().ToString("g"))</text>}</div>
+                            @if(!string.IsNullOrWhiteSpace(r.ModeratorNotes)){
+                                <div class="small mt-1">Not: @r.ModeratorNotes</div>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <form asp-action="Update" asp-controller="AdminReports" method="post" class="row g-2 align-items-center">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@r.Id" />
+                            <input type="hidden" name="returnStatus" value="@currentFilter" />
+                            <div class="col-12 col-md">
+                                <input type="text" name="notes" class="form-control form-control-sm" placeholder="Not ekle (isteğe bağlı)" />
+                            </div>
+                            <div class="col-12 col-md-auto">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button name="status" value="New" class="btn btn-outline-secondary" title="Yeni">Yeni</button>
+                                    <button name="status" value="InReview" class="btn btn-outline-info" title="İncelemede">İncele</button>
+                                    <button name="status" value="Resolved" class="btn btn-outline-success" title="Çözüldü">Çöz</button>
+                                    <button name="status" value="Blocked" class="btn btn-outline-danger" title="Engelle">Engelle</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+</section>

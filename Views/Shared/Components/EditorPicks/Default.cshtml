@@ -1,0 +1,22 @@
+@model IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel>
+<div class="quiz-strip editor-picks quiz-slider" data-slider>
+  <div class="qs-head d-flex align-items-center justify-content-between mb-2">
+    <h2 class="section-title m-0">Editör Seçimi</h2>
+    <div class="d-flex flex-column align-items-end gap-1">
+      <div class="qs-progress"><span class="bar"></span></div>
+      <div class="qs-nav btn-group btn-group-sm">
+        <button type="button" class="qs-prev btn btn-outline-light" aria-label="Geri">‹</button>
+        <button type="button" class="qs-next btn btn-outline-light" aria-label="İleri">›</button>
+      </div>
+    </div>
+  </div>
+              <p>Editörün öne çıkardığı quizler</p>
+  <div class="qs-window">
+    <div class="qs-track">
+      @foreach (var q in Model)
+      {
+          <div class="qs-item"><partial name="~/Views/Shared/Partials/_QuizCardHome.cshtml" model="q" /></div>
+      }
+    </div>
+  </div>
+</div>

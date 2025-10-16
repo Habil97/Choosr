@@ -1,0 +1,132 @@
+@model Choosr.Domain.Models.UserProfile
+@{ViewData["Title"] = Model.DisplayName;}
+<div class="profile-layout">
+  <aside class="profile-sidebar">
+    <div class="profile-card">
+ <div class="avatar-lg"><img src="@(Model.AvatarUrl??"/favicon.ico")" alt=""/></div>
+      <div class="profile-names">
+        <div class="prof-handle">@Model.UserName</div>
+      </div>
+    </div>
+    <style>
+      .profile-stats{user-select:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin-top:.75rem;}
+      .profile-stats > button{all:unset;display:flex;flex-direction:column;gap:.15rem;padding:.6rem .7rem;border:1px solid var(--c-border);border-radius:10px;cursor:pointer;transition:.15s;background:rgba(255,255,255,.04);} 
+      .profile-stats > button:focus-visible{outline:2px solid #f8c24a;outline-offset:2px;} 
+      .profile-stats > button:hover{background:rgba(255,255,255,.07);} 
+      .profile-stats span{font-size:.55rem;letter-spacing:.05em;color:#aaa;font-weight:600;} 
+      .profile-stats strong{font-size:.9rem;font-weight:600;}
+    </style>
+    <div class="profile-stats" role="group" aria-label="Profil istatistikleri">
+      <button type="button" data-tab-target="created" aria-label="Oluşturulan quizler @(Model.CreatedCount)"><span>QUİZLER</span><strong>@Model.CreatedCount</strong></button>
+      <button type="button" data-tab-target="played" aria-label="Oynanan @(Model.PlayedCount)"><span>OYNANAN</span><strong>@Model.PlayedCount</strong></button>
+      <button type="button" data-tab-target="reactions" aria-label="Reaksiyon verilen @(Model.ReactionCount)"><span>REAKSİYON</span><strong>@Model.ReactionCount</strong></button>
+      <button type="button" data-tab-target="drafts" aria-label="Taslaklar">
+        <span>TASLAKLAR</span><strong>@(((IEnumerable<Choosr.Web.ViewModels.DraftViewModel>) (ViewBag.Drafts ?? Enumerable.Empty<Choosr.Web.ViewModels.DraftViewModel>())).Count())</strong>
+      </button>
+    </div>
+    <nav class="profile-menu">
+      <a class="menu-item" asp-controller="Profile" asp-action="Edit">⚙ Profil Düzenle</a>
+      <a class="menu-item" asp-controller="Profile" asp-action="ChangePassword">🔒 Şifre Değiştir</a>
+      <form asp-controller="Account" asp-action="Logout" method="post" class="menu-item m-0 p-0">
+        <button type="submit" class="menu-item btn-logout">↩ Çıkış</button>
+      </form>
+    </nav>
+  </aside>
+  <section class="profile-content">
+    <div class="profile-tabs">
+      <button class="tab-btn active" data-tab="created">QUİZLER</button>
+      <button class="tab-btn" data-tab="played">OYNANANLAR</button>
+      <button class="tab-btn" data-tab="reactions">REAKSİYONLAR</button>
+      <button class="tab-btn" data-tab="drafts">TASLAKLAR</button>
+    </div>
+    <div class="tab-panels">
+      <div class="tab-panel active" id="tab-created">
+        @{
+          var created = ViewBag.Created as IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel> ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizCardViewModel>();
+        }
+        @if(!created.Any()){
+          <div class="empty-box">Henüz oluşturulmuş quiz yok.</div>
+        } else {
+          <div class="quiz-cards">
+            @foreach(var q in created){
+              <div class="position-relative">
+                <partial name="~/Views/Shared/Partials/_QuizCardHome.cshtml" model="q" />
+                <div class="d-flex gap-2 mt-2">
+                  <a class="btn btn-sm btn-warning" asp-controller="ManageQuiz" asp-action="Edit" asp-route-id="@q.Id">Quiz Düzenle</a>
+                  <form asp-controller="ManageQuiz" asp-action="Delete" asp-route-id="@q.Id" method="post" onsubmit="return confirm('Bu quizi silmek istediğine emin misin?');">
+                    <button type="submit" class="btn btn-sm btn-danger">Quiz Sil</button>
+                  </form>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      <div class="tab-panel" id="tab-played">
+        @{
+          var played = ViewBag.Played as IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel> ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizCardViewModel>();
+        }
+        @if(!played.Any()){
+          <div class="empty-box">Henüz oynanan yok.</div>
+        } else {
+          <div class="quiz-cards">
+            @foreach(var q in played){
+              <partial name="~/Views/Shared/Partials/_QuizCardHome.cshtml" model="q" />
+            }
+          </div>
+        }
+      </div>
+      <div class="tab-panel" id="tab-reactions">
+        @{
+          var reactions = ViewBag.Reactions as IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel> ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizCardViewModel>();
+        }
+        @if(!reactions.Any()){
+          <div class="empty-box">Reaksiyon yok.</div>
+        } else {
+          <div class="quiz-cards">
+            @foreach(var q in reactions){
+              <partial name="~/Views/Shared/Partials/_QuizCardHome.cshtml" model="q" />
+            }
+          </div>
+        }
+      </div>
+      <div class="tab-panel" id="tab-drafts">
+        @{
+          var drafts = ViewBag.Drafts as IEnumerable<Choosr.Web.ViewModels.DraftViewModel> ?? Enumerable.Empty<Choosr.Web.ViewModels.DraftViewModel>();
+        }
+        @if(!drafts.Any()){
+          <div class="empty-box">Taslak yok.</div>
+        } else {
+          <div class="quiz-cards">
+            @foreach(var d in drafts){
+              <div class="glass-box p-2" style="border-radius:12px;">
+                <div class="d-flex gap-2 align-items-center">
+                  <div style="width:120px;height:68px;overflow:hidden;border-radius:8px;background:#000;">
+                    <img src="@(string.IsNullOrWhiteSpace(d.CoverImageUrl)?"/img/sample1.jpg":d.CoverImageUrl)" style="width:100%;height:100%;object-fit:cover;"/>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold">@(!string.IsNullOrWhiteSpace(d.Title)?d.Title:"(Başlıksız Taslak)")</div>
+                    <div class="text-muted small">@d.UpdatedAt.ToLocalTime().ToString("g") güncellendi</div>
+                    <div class="d-flex gap-2 mt-1">
+                      <a class="btn btn-sm btn-warning" asp-controller="CreateQuiz" asp-action="Details" asp-route-draftId="@d.Id">Düzenlemeye Devam Et</a>
+                      <form asp-controller="Drafts" asp-action="Publish" method="post" class="m-0" onsubmit="return confirm('Bu taslaktan quiz yayınlansın mı?');">
+                        <input type="hidden" name="id" value="@d.Id" />
+                        <button type="submit" class="btn btn-sm btn-success">Yayınla</button>
+                      </form>
+                      <form asp-controller="Drafts" asp-action="Delete" asp-route-id="@d.Id" method="post" class="m-0" onsubmit="return confirm('Taslak silinsin mi?');">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+</div>
+@section Scripts {
+  <script nonce="@(Context.Items["CspNonce"])" src="~/js/profile.js" asp-append-version="true"></script>
+}

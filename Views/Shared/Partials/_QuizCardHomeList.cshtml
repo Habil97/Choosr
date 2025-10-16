@@ -1,0 +1,5 @@
+@model IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel>
+@foreach (var item in Model)
+{
+    @await Html.PartialAsync("~/Views/Shared/Partials/_QuizCardHome.cshtml", item)
+}

@@ -1,0 +1,45 @@
+@{ViewData["Title"]="Giriş Yap";}
+<div class="auth-page">
+  <div class="auth-left">
+     <h1 class="auth-title mb-2">Giriş Yap</h1>
+       @if(TempData["AuthMsg"] is string am && !string.IsNullOrWhiteSpace(am)){
+          <div class="alert alert-warning small mb-3">@am</div>
+       }
+     <div class="auth-switch small mb-4">Hesabın yok mu? <a asp-action="Register">Kayıt Ol →</a></div>
+     <div class="vstack gap-2">
+        <button type="button" class="auth-oauth-btn"><span>🟢</span> Google ile Giriş Yap</button>
+        <button type="button" class="auth-oauth-btn"><span>✖</span> Twitter ile Giriş Yap</button>
+     </div>
+     <div class="auth-divider">veya</div>
+       <form class="auth-form vstack gap-3" method="post" novalidate>
+        @if(!ViewData.ModelState.IsValid){<div class="text-danger small">@string.Join(" ", ViewData.ModelState.Values.SelectMany(v=>v.Errors).Select(e=>e.ErrorMessage))</div>}
+        <div>
+          <label class="form-label">E-Mail veya Kullanıcı Adı</label>
+          <input name="UserOrEmail" class="form-control" placeholder="E-Mail veya Kullanıcı Adı" />
+        </div>
+        <div class="position-relative">
+          <label class="form-label">Şifre</label>
+          <input name="Password" type="password" class="form-control" placeholder="Şifre" data-pass />
+          <button class="show-pass-btn" type="button" data-toggle-pass></button>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+           <label class="auth-check m-0"><input type="checkbox" name="Remember" /> <span>Beni Hatırla</span></label>
+           <a href="#" class="small">Şifremi Unuttum?</a>
+        </div>
+            @{ var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration; var siteKey = cfg?["Turnstile:SiteKey"] ?? cfg?["Cloudflare:Turnstile:SiteKey"]; var enableLogin = (cfg?["Captcha:RequireOn:Login"] ?? "false").ToLowerInvariant()=="true"; }
+            @if(enableLogin && !string.IsNullOrWhiteSpace(siteKey)){
+               <div class="mt-2"><div class="cf-turnstile" data-sitekey="@siteKey"></div></div>
+            }
+        <div>
+          <button class="btn btn-success auth w-100" type="submit">Giriş Yap</button>
+        </div>
+     </form>
+  </div>
+  <div class="auth-right d-none d-md-flex">
+     <partial name="~/Views/Shared/Partials/_AuthFeatures.cshtml" />
+  </div>
+</div>
+@{ var cfg2 = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration; var siteKey2 = cfg2?["Turnstile:SiteKey"] ?? cfg2?["Cloudflare:Turnstile:SiteKey"]; var enableLogin2 = (cfg2?["Captcha:RequireOn:Login"] ?? "false").ToLowerInvariant()=="true"; }
+@if(enableLogin2 && !string.IsNullOrWhiteSpace(siteKey2)){
+   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+}

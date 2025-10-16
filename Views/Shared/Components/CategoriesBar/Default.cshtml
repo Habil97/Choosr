@@ -1,0 +1,26 @@
+@model IEnumerable<Choosr.Web.Services.CategoryDto>
+<div class="categories-bar-wrapper">
+  <div class="categories-bar" role="navigation" aria-label="Kategoriler">
+    @foreach (var c in Model)
+    {
+        <a class="cat-pill" asp-controller="Quiz" asp-action="Index" asp-route-category="@c.Name" title="@c.Name">
+            <span class="icon">@c.Icon</span>
+            <span class="label">@c.Name</span>
+        </a>
+    }
+  </div>
+  <button class="cat-scroll prev" type="button" aria-label="Geri">‹</button>
+  <button class="cat-scroll next" type="button" aria-label="İleri">›</button>
+</div>
+@section Scripts{
+<script>
+(function(){
+ const wrap=document.querySelector('.categories-bar');
+ const prev=document.querySelector('.cat-scroll.prev');
+ const next=document.querySelector('.cat-scroll.next');
+ if(!wrap)return;
+ prev.addEventListener('click',()=>wrap.scrollBy({left:-300,behavior:'smooth'}));
+ next.addEventListener('click',()=>wrap.scrollBy({left:300,behavior:'smooth'}));
+})();
+</script>
+}

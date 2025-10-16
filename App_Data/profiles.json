@@ -1,0 +1,58 @@
+{
+  "Profiles": [
+    {
+      "Id": "f17e74fb-3528-4297-97dd-73a9246c1561",
+      "UserName": "HABIL97",
+      "DisplayName": "HABIL",
+      "Bio": null,
+      "AvatarUrl": "/avatars/b4328a9a-c019-43b6-bd40-12c5e85f27fd.jpg",
+      "Twitter": null,
+      "Instagram": null,
+      "Youtube": null,
+      "Twitch": null,
+      "Kick": null,
+      "CreatedCount": 4,
+      "PlayedCount": 5,
+      "CommentCount": 1,
+      "ReactionCount": 1
+    },
+    {
+      "Id": "dddd3714-7023-493b-95ba-3d20072a9d0a",
+      "UserName": "RECEP68",
+      "DisplayName": "HABIL98",
+      "Bio": null,
+      "AvatarUrl": "/avatars/dddd3714-7023-493b-95ba-3d20072a9d0a.jpg",
+      "Twitter": null,
+      "Instagram": null,
+      "Youtube": null,
+      "Twitch": null,
+      "Kick": null,
+      "CreatedCount": 1,
+      "PlayedCount": 2,
+      "CommentCount": 0,
+      "ReactionCount": 1
+    }
+  ],
+  "PlayedByUser": {
+    "HABIL97": [
+      "8d83f351-2b6e-4b08-aee4-a16761b833e8",
+      "e0af9047-f1b1-437f-bf0f-155b3170f6b8",
+      "c5eb6456-5994-40e2-994a-c609d9b64ac3",
+      "64f23789-eff6-4180-9a91-90d150529ca6",
+      "7720f73a-d6e5-42ae-a610-7d68b87de979"
+    ],
+    "RECEP68": [
+      "e0af9047-f1b1-437f-bf0f-155b3170f6b8",
+      "b7f52f68-e1bc-4c9f-ab9c-39ed9b9d64dd"
+    ]
+  },
+  "ReactedByUser": {
+    "HABIL97": [
+      "8d83f351-2b6e-4b08-aee4-a16761b833e8",
+      "7720f73a-d6e5-42ae-a610-7d68b87de979"
+    ],
+    "RECEP68": [
+      "e0af9047-f1b1-437f-bf0f-155b3170f6b8"
+    ]
+  }
+}

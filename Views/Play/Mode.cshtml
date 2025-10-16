@@ -1,0 +1,82 @@
+@model Choosr.Web.ViewModels.QuizDetailViewModel
+@{ViewData["Title"]="Mod Seç";}
+
+<section class="play-mode layout-container">
+  <a class="back-link d-inline-flex align-items-center mb-2 text-decoration-none" asp-controller="Quiz" asp-action="Detail" asp-route-id="@Model.Id">← Quize geri dön</a>
+  <div class="d-flex justify-content-end mb-2">
+    <a class="btn btn-sm btn-outline-warning" asp-controller="Play" asp-action="Surprise" title="Sürpriz Quiz">🎲 Sürpriz Quiz</a>
+  </div>
+  <div class="pm-wrapper">
+    <!-- Left: Quiz preview card -->
+    <div class="pm-left">
+  <div class="pm-quiz-card">
+  <div class="thumb"><img src="@Model.CoverImageUrl" alt="@Model.Title" width="160" height="90"/></div>
+        <div class="body">
+          <div class="title" title="@Model.Title">@Model.Title</div>
+          <div class="desc">@Model.Description</div>
+          <div class="meta">
+            <div class="by">
+              <span class="avatar"><img src="@(Model.AuthorAvatarUrl ?? "/favicon.ico")" alt="@Model.AuthorUserName"/></span>
+              <span class="dim">Oluşturan</span> <strong>@Model.AuthorUserName</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right: Mode panel -->
+    <div class="pm-right">
+      <div class="pm-panel">
+        <div class="pm-section">
+          <div class="pm-title">Mod</div>
+          <div class="mode-grid">
+            <button class="mode-card active" data-mode="bracket" title="Turnuva Ağacı">
+              <span class="icon">🏆</span>
+              <span class="name">Turnuva Ağacı</span>
+              <span class="info" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Turnuva Ağacı Hakkında" data-info="Seçimler turnuva formatında eşleşerek karşılaşır. Kazananlar bir üst tura çıkar, kaybedenler elenir.">i</span>
+            </button>
+            <button class="mode-card" data-mode="vs" title="O mu, bu mu?">
+              <span class="icon">👑</span>
+              <span class="name">O mu, bu mu?</span>
+              <span class="info" role="button" tabindex="0" aria-haspopup="dialog" aria-label="O mu, bu mu? Hakkında" data-info="Kazanan seçim tahtta kalır! Her turda yeni bir rakip ile karşılaşır ve elenene kadar hükmünü sürdürür.">i</span>
+            </button>
+            <button class="mode-card" data-mode="rank" title="Kör Sıralama">
+              <span class="icon">📋</span>
+              <span class="name">Kör Sıralama</span>
+              <span class="info" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Kör Sıralama Hakkında" data-info="Seçenekleri bilmeden sırala; kararların sonunda nasıl bir liste çıkacağını gör.">i</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pm-section">
+          <div class="pm-title">Turlar</div>
+          <div class="rounds" id="roundsArea">
+            @{
+              var totalChoices = Model.Choices.Count();
+              var allow16 = totalChoices >= 16;
+              var allow32 = totalChoices >= 32;
+              var allow64 = totalChoices >= 64;
+              var defaultRounds = allow64 ? 64 : allow32 ? 32 : allow16 ? 16 : 8;
+            }
+            <button class="round-pill @(defaultRounds==8 ? "active" : string.Empty)" data-rounds="8">8</button>
+            @if(allow16){<button class="round-pill @(defaultRounds==16 ? "active" : string.Empty)" data-rounds="16">16</button>}
+            @if(allow32){<button class="round-pill @(defaultRounds==32 ? "active" : string.Empty)" data-rounds="32">32</button>}
+            @if(allow64){<button class="round-pill @(defaultRounds==64 ? "active" : string.Empty)" data-rounds="64">64</button>}
+          </div>
+          <div class="rounds" id="slotsArea" style="display:none; margin-top:.75rem;">
+            <button class="round-pill active" data-slots="5">5</button>
+            <button class="round-pill" data-slots="10">10</button>
+          </div>
+        </div>
+
+        <div class="pm-actions">
+          <button class="btn btn-danger pm-start" data-quiz-id="@Model.Id" data-bracket-url="@Url.Action("Bracket","Play")/@Model.Id" data-vs-url="@Url.Action("Vs","Play")/@Model.Id" data-rank-url="@Url.Action("Rank","Play")/@Model.Id">Başla</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+@section Scripts{
+<script src="/js/playMode.js" nonce="@(Context.Items["CspNonce"])" defer></script>
+}

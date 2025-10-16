@@ -1,0 +1,374 @@
+@model Choosr.Web.ViewModels.PagedResultViewModel<Choosr.Web.ViewModels.QuizCardViewModel>
+@{
+    ViewData["Title"] = "Keşfet";
+    var currentCategory = ViewBag.Category as string;
+    var categories = ViewBag.Categories as IEnumerable<string> ?? Array.Empty<string>();
+    var currentQ = ViewBag.Q as string;
+  var sort = (ViewBag.Sort as string) ?? "latest";
+  // Order hint mapping for ItemList
+  string? itemListOrder = sort switch {
+    "latest" => "http://schema.org/ItemListOrderDescending", // newest first
+    "popular" => "http://schema.org/ItemListOrderDescending", // popularity descending
+    "comments" => "http://schema.org/ItemListOrderDescending",
+    "reactions" => "http://schema.org/ItemListOrderDescending",
+    "title" => "http://schema.org/ItemListOrderAscending",
+    "title-desc" => "http://schema.org/ItemListOrderDescending",
+    _ => null
+  };
+}
+<section class="quiz-listing layout-container">
+  @* Popüler etiketler blok *@
+  <aside class="popular-tags mb-3" aria-label="Popüler Etiketler">
+    @{ try {
+        var tagStatsSvc = Context.RequestServices.GetService<Choosr.Web.Services.ITagStatsService>();
+        var topTags = tagStatsSvc?.GetTopTags(24) ?? new List<Choosr.Web.Services.TagStatDto>();
+        if(topTags.Any()){
+            <div class="glass-box p-3" style="margin-bottom:1rem;">
+              <div style="font-weight:600;letter-spacing:.5px;font-size:.9rem;margin-bottom:.5rem;">Popüler Etiketler</div>
+              <div class="d-flex flex-wrap gap-2">
+                @foreach(var t in topTags){
+                  var tagUrl = Url.Action("Index","Quiz", new { tag = t.Name });
+                  <a class="tag-chip" href="@tagUrl" data-popular-tag="@t.Name" rel="internal" title="@t.Name etiketi ile quizleri görüntüle">#@t.Name<span class="count" style="opacity:.7;font-size:.7rem;margin-left:.25rem;">@t.Count</span></a>
+                }
+              </div>
+            </div>
+        }
+      } catch { /* ignore */ } }
+  </aside>
+  <div class="discover-filters glass-box" data-nosnippet>
+    <form id="filterForm" method="get" asp-controller="Quiz" asp-action="Index" class="df-form" autocomplete="off" role="search" data-nosnippet>
+      <div class="df-field">
+        <span class="df-ico" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7Z" stroke="currentColor" stroke-width="1.6"/><path d="M7 10h10M7 14h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span>
+        <select name="category" class="df-control select" aria-label="Kategori">
+          <option value="">Tüm Kategoriler</option>
+          @foreach(var c in categories){
+            if(string.Equals(currentCategory,c,StringComparison.OrdinalIgnoreCase)){
+              <option value="@c" selected>@c</option>
+            } else {
+              <option value="@c">@c</option>
+            }
+          }
+        </select>
+      </div>
+      <div class="df-field">
+        <span class="df-ico" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 3v14m0 0-3-3m3 3 3-3M17 21V7m0 0-3 3m3-3 3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span>
+        <select name="sort" class="df-control select" aria-label="Sırala">
+          @{ var curSort = Context.Request.Query["sort"].ToString(); }
+          @if(string.IsNullOrWhiteSpace(curSort) || curSort=="latest"){
+            <option value="latest" selected>En Yeni</option>
+          } else {
+            <option value="latest">En Yeni</option>
+          }
+          @if(curSort=="popular"){
+            <option value="popular" selected>En Popüler</option>
+          } else {
+            <option value="popular">En Popüler</option>
+          }
+          @if(curSort=="title"){
+            <option value="title" selected>Başlığa Göre (A→Z)</option>
+          } else {
+            <option value="title">Başlığa Göre (A→Z)</option>
+          }
+          @if(curSort=="title-desc"){
+            <option value="title-desc" selected>Başlığa Göre (Z→A)</option>
+          } else {
+            <option value="title-desc">Başlığa Göre (Z→A)</option>
+          }
+          @if(curSort=="comments"){
+            <option value="comments" selected>Yorum Sayısına Göre</option>
+          } else {
+            <option value="comments">Yorum Sayısına Göre</option>
+          }
+          @if(curSort=="reactions"){
+            <option value="reactions" selected>Tepki Sayısına Göre</option>
+          } else {
+            <option value="reactions">Tepki Sayısına Göre</option>
+          }
+        </select>
+      </div>
+      <div class="df-field grow">
+        <span class="df-ico" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </span>
+        <input type="search" name="q" value="@currentQ" class="df-control search" placeholder="Anahtar kelime ile ara" aria-label="Ara" />
+      </div>
+      <input type="hidden" name="tag" value="@ViewBag.SelectedTag" />
+      <button class="btn df-btn primary" type="submit" aria-label="Filtrele">Filtrele</button>
+      <a class="btn df-btn ghost" href="@Url.Action("Index","Quiz")" aria-label="Filtreleri temizle">Sıfırla</a>
+    </form>
+  </div>
+
+  <div style="height:.5rem;"></div>
+  <partial name="~/Views/Shared/Partials/_TagFilterBar.cshtml" />
+  <div id="relatedTags" class="related-tags glass-box p-3 mt-2" aria-label="İlgili Etiketler" style="display:none;">
+    <div style="font-weight:600;letter-spacing:.5px;font-size:.85rem;margin-bottom:.5rem;">İlgili Etiketler</div>
+    <div class="d-flex flex-wrap gap-2" data-rel-tags>
+      <!-- dynamic -->
+    </div>
+  </div>
+
+  <div id="grid" class="quiz-cards mt-2">
+  @if(Model.Items != null && Model.Items.Any()){
+    foreach (var item in Model.Items)
+    {
+        @await Html.PartialAsync("~/Views/Shared/Partials/_QuizCardHome.cshtml", item)
+    }
+  } else {
+    <div class="empty-state" style="padding:2rem;text-align:center;color:#9fb2d6;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.2);border-radius:12px;">
+      <div style="font-weight:800;letter-spacing:.04em;margin-bottom:.25rem;">Sonuç bulunamadı</div>
+      <div style="opacity:.9;">Filtreleri değiştirerek tekrar deneyin ya da <a href="@Url.Action("Index","Quiz")" class="link-light">tüm quizleri</a> görüntüleyin.</div>
+    </div>
+  }
+  </div>
+  <div class="text-center" style="margin-top:1rem;" data-nosnippet>
+  <button id="btnMore" class="btn btn-outline btn-sm" @(((Model.Items?.Count() ?? 0) < Model.PageSize || !(Model.Items?.Any() ?? false))?"disabled":null) aria-label="Daha fazla quiz yükle">Daha fazla yükle</button>
+  </div>
+</section>
+
+@section Scripts{
+<script>
+  (function(){
+    const grid = document.getElementById('grid');
+    const btn = document.getElementById('btnMore');
+    const filterForm = document.getElementById('filterForm');
+    if(!grid || !btn || !filterForm) return;
+    let skip = @(Model.Items?.Count() ?? 0);
+    const take = @Model.PageSize;
+
+    function getFilters(){
+      const fd = new FormData(filterForm);
+      const category = (fd.get('category') || '').toString().trim();
+      const q = (fd.get('q') || '').toString().trim();
+      const tag = (fd.get('tag') || '').toString().trim();
+      const sort = (fd.get('sort') || 'latest').toString().trim() || 'latest';
+      return { category, q, tag, sort };
+    }
+    function buildUrl(filters, skipVal, takeVal){
+      const url = new URL('@Url.Action("SearchCards","Quiz")', window.location.origin);
+      if(filters.category) url.searchParams.set('category', filters.category);
+      if(filters.tag) url.searchParams.set('tag', filters.tag);
+      if(filters.q) url.searchParams.set('q', filters.q);
+      if(filters.sort) url.searchParams.set('sort', filters.sort);
+      url.searchParams.set('skip', String(skipVal));
+      url.searchParams.set('take', String(takeVal));
+      return url;
+    }
+    function pushUrl(filters){
+      const next = new URL(window.location.href);
+      // Clear then set
+      ['category','tag','q','sort'].forEach(k=> next.searchParams.delete(k));
+      if(filters.category) next.searchParams.set('category', filters.category);
+      if(filters.tag) next.searchParams.set('tag', filters.tag);
+      if(filters.q) next.searchParams.set('q', filters.q);
+      if(filters.sort) next.searchParams.set('sort', filters.sort);
+      window.history.replaceState({}, '', next);
+    }
+    function setBtnStateAfter(count){
+      if(count < take){ btn.textContent = 'Hepsi yüklendi'; btn.disabled = true; }
+      else { btn.textContent = 'Daha fazla yükle'; btn.disabled = false; }
+    }
+    function skeletonCard(){
+      return '<a class="quiz-card v2 skeleton text-decoration-none" href="javascript:void(0)">\
+        <div class="qc-media"><div class="skel"></div></div>\
+        <div class="qc-body">\
+          <div class="skel line wide"></div>\
+          <div class="skel line small"></div>\
+        </div>\
+        <div class="qc-bar">\
+          <div class="skel dot" style="width:56px"></div>\
+          <div class="skel dot" style="width:56px"></div>\
+          <div class="skel dot" style="width:56px"></div>\
+          <div class="skel dot" style="width:56px"></div>\
+        </div>\
+      </a>';
+    }
+    function showSkeleton(count){
+      const tmp = document.createElement('div');
+      let html = '';
+      for(let i=0;i<count;i++) html += skeletonCard();
+      tmp.innerHTML = html;
+      return tmp;
+    }
+    function renderEmpty(){
+      grid.innerHTML = '<div class="empty-state" style="padding:2rem;text-align:center;color:#9fb2d6;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.2);border-radius:12px;"><div style="font-weight:800;letter-spacing:.04em;margin-bottom:.25rem;">Sonuç bulunamadı</div><div style="opacity:.9;">Filtreleri değiştirerek tekrar deneyin ya da <a href="@Url.Action("Index","Quiz")" class="link-light">tüm quizleri</a> görüntüleyin.</div></div>';
+    }
+    async function refreshGrid(){
+      const filters = getFilters();
+      pushUrl(filters);
+      btn.disabled = true; const old = btn.textContent; btn.textContent = 'Yükleniyor...';
+      // skeletonları göster
+      grid.innerHTML = ''; grid.appendChild(showSkeleton(@Model.PageSize));
+      try{
+        const resp = await fetch(buildUrl(filters, 0, take), { headers: { 'X-Requested-With': 'fetch' } });
+        if(!resp.ok) throw new Error('fetch failed');
+        const html = await resp.text();
+        const tmp = document.createElement('div'); tmp.innerHTML = html; const count = tmp.children.length;
+        if(count === 0){ renderEmpty(); }
+        else { grid.innerHTML = ''; while(tmp.firstChild){ grid.appendChild(tmp.firstChild); } }
+        skip = count; setBtnStateAfter(count);
+      }catch(e){
+        // Hata durumunda normal gönderime dön
+        const filters = getFilters();
+        const url = new URL('@Url.Action("Index","Quiz")', window.location.origin);
+        if(filters.category) url.searchParams.set('category', filters.category);
+        if(filters.tag) url.searchParams.set('tag', filters.tag);
+        if(filters.q) url.searchParams.set('q', filters.q);
+        if(filters.sort) url.searchParams.set('sort', filters.sort);
+        window.location.href = url.toString();
+      }finally{
+        if(!btn.disabled) btn.textContent = old; else btn.textContent = btn.textContent; // keep text if disabled as "Hepsi yüklendi"
+      }
+    }
+
+    // Form submit -> AJAX
+    filterForm.addEventListener('submit', function(ev){ ev.preventDefault(); refreshGrid(); });
+  // Kategori ve sıralama değişimi -> AJAX
+  try{ filterForm.querySelector('select[name="category"]').addEventListener('change', ()=> refreshGrid()); }catch{}
+  try{ filterForm.querySelector('select[name="sort"]').addEventListener('change', ()=> refreshGrid()); }catch{}
+    // Arama -> debounce ile canlı
+    try{
+      const qInput = filterForm.querySelector('input[name="q"]');
+      let t; qInput.addEventListener('input', ()=>{ clearTimeout(t); t = setTimeout(()=> refreshGrid(), 450); });
+    }catch{}
+    // Tag chip tıklaması -> formun gizli tag alanını güncelle ve yenile
+    try{
+      const tagBar = document.querySelector('.tag-filter-bar');
+      tagBar.addEventListener('click', function(ev){
+        const a = ev.target.closest('a.tag-chip');
+        if(!a) return;
+        ev.preventDefault();
+        const val = (a.getAttribute('data-tag') || '').trim();
+        const tagInput = filterForm.querySelector('input[name="tag"]');
+        if(tagInput) tagInput.value = val;
+        tagBar.querySelectorAll('a.tag-chip.active').forEach(el=> el.classList.remove('active'));
+        a.classList.add('active');
+        refreshGrid();
+        refreshRelated(val);
+      });
+    }catch{}
+
+    async function refreshRelated(tag){
+      const box = document.getElementById('relatedTags');
+      const wrap = box?.querySelector('[data-rel-tags]');
+      if(!box || !wrap){ return; }
+      if(!tag){ box.style.display = 'none'; wrap.innerHTML = ''; return; }
+      try{
+        const url = new URL('@Url.Action("RelatedTags","Quiz")', window.location.origin);
+        url.searchParams.set('tag', tag);
+        const resp = await fetch(url.toString(), { headers: { 'X-Requested-With': 'fetch' } });
+        if(!resp.ok) throw new Error('co fetch failed');
+        const data = await resp.json();
+        const items = (data && Array.isArray(data.items)) ? data.items : [];
+        if(items.length === 0){ box.style.display = 'none'; wrap.innerHTML = ''; return; }
+        // render
+        let html = '';
+        items.forEach(it => {
+          const name = String(it.name || '').trim();
+          const count = Number(it.count || 0);
+          const href = new URL('@Url.Action("Index","Quiz")', window.location.origin);
+          href.searchParams.set('tag', name);
+          html += `<a class="tag-chip alt" href="${href.toString()}" rel="internal" title="${name} etiketi ile quizleri görüntüle">#${name}<span class="count" style="opacity:.6;font-size:.65rem;margin-left:.25rem;">${count}</span></a>`;
+        });
+        wrap.innerHTML = html;
+        box.style.display = '';
+      }catch{
+        box.style.display = 'none'; wrap.innerHTML = '';
+      }
+    }
+
+    // Initial related tags render on first load
+    try{
+      const initialTag = (new URL(window.location.href)).searchParams.get('tag') || (document.querySelector('input[name="tag"]').value || '');
+      if(initialTag) refreshRelated(initialTag);
+    }catch{}
+
+    // Load More aynı kalır; sadece güncel filtrelerle devam eder
+    btn.addEventListener('click', async ()=>{
+      if(btn.disabled) return;
+      btn.disabled = true; const old = btn.textContent; btn.textContent = 'Yükleniyor...';
+      // grid sonuna skeleton ekle (göz zıplamasın)
+      const skelWrap = showSkeleton(Math.max(2, Math.floor(take/3)));
+      grid.appendChild(skelWrap);
+      try{
+        const filters = getFilters();
+        const url = buildUrl(filters, skip, take);
+        const resp = await fetch(url.toString(), { headers: { 'X-Requested-With': 'fetch' } });
+        if(!resp.ok){ throw new Error('load failed'); }
+        const html = await resp.text();
+        const tmp = document.createElement('div'); tmp.innerHTML = html; const count = tmp.children.length;
+        // skeletonları kaldır ve gerçek kartları ekle
+        skelWrap.remove();
+        while(tmp.firstChild){ grid.appendChild(tmp.firstChild); }
+        skip += count;
+        if(count < take){ btn.textContent = 'Hepsi yüklendi'; }
+        else { btn.disabled = false; btn.textContent = old; }
+      }catch{ 
+        // hata durumunda skeletonları kaldır
+        try{ skelWrap.remove(); }catch{}
+        btn.textContent = 'Tekrar dene'; btn.disabled = false; 
+      }
+    });
+  })();
+</script>
+}
+
+@section Head{
+@{
+  // Canonical and rel prev/next should live in head
+  var curQs = System.Web.HttpUtility.ParseQueryString(Context.Request.QueryString.ToString());
+  var pageVal = Model.Page;
+  if(pageVal <= 1){ curQs.Remove("page"); } else { curQs.Set("page", pageVal.ToString()); }
+  var path = Context.Request.Path.Value ?? "/Quiz";
+  var qsStr = curQs.ToString();
+  var canonical = path + (string.IsNullOrWhiteSpace(qsStr)? string.Empty : ("?"+qsStr));
+}
+<link rel="canonical" href="@canonical" />
+@{
+  var totalPages = Model.TotalPages;
+  var currentPage = Model.Page;
+  string BuildPageUrl(int p){
+    var q = System.Web.HttpUtility.ParseQueryString(Context.Request.QueryString.ToString());
+    if(p<=1){ q.Remove("page"); } else { q.Set("page", p.ToString()); }
+    var baseUrl = Context.Request.Path.HasValue ? Context.Request.Path.Value : "/Quiz";
+    var qs = q.ToString();
+    return baseUrl + (string.IsNullOrWhiteSpace(qs)? string.Empty : ("?"+qs));
+  }
+  if(totalPages > 1){
+    if(currentPage > 1){ <link rel="prev" href="@BuildPageUrl(currentPage-1)" /> }
+    if(currentPage < totalPages){ <link rel="next" href="@BuildPageUrl(currentPage+1)" /> }
+  }
+}
+<script type="application/ld+json" nonce="@(Context.Items["CspNonce"])" >@{
+  // Build ItemList JSON-LD for current page of quizzes
+  var items = Model.Items?.ToList() ?? new List<Choosr.Web.ViewModels.QuizCardViewModel>();
+  var baseUrl = Context.Request.Scheme + "://" + Context.Request.Host.Value;
+  int startPos = ((Model.Page - 1) * Model.PageSize) + 1;
+  var listItems = items.Select((q,idx) => new {
+    @type = "ListItem",
+    position = startPos + idx,
+    url = baseUrl + Url.Action("Detail","Quiz", new { id = q.Id }),
+    name = q.Title,
+    image = string.IsNullOrWhiteSpace(q.CoverImageUrl) ? null : (object)q.CoverImageUrl,
+    interactionStatistic = new object[]{
+      new { @type = "InteractionCounter", interactionType = new { @type = "http://schema.org/WatchAction" }, userInteractionCount = q.Plays },
+      new { @type = "InteractionCounter", interactionType = new { @type = "http://schema.org/CommentAction" }, userInteractionCount = q.Comments },
+      new { @type = "InteractionCounter", interactionType = new { @type = "http://schema.org/LikeAction" }, userInteractionCount = q.Reactions }
+    }
+  });
+  var itemListObj = new System.Collections.Generic.Dictionary<string, object?>{
+    ["@context"] = "https://schema.org",
+    ["@type"] = "ItemList",
+    ["name"] = string.IsNullOrWhiteSpace(currentCategory) ? "Keşfet Quizleri" : $"{currentCategory} Quizleri",
+    ["itemListElement"] = listItems,
+    ["numberOfItems"] = items.Count,
+    ["itemListOrder"] = itemListOrder,
+    ["description"] = string.IsNullOrWhiteSpace(currentCategory) ? "Farklı kategorilerde popüler ve yeni quizleri keşfedin." : $"{currentCategory} kategorisindeki quizleri keşfedin.",
+    ["url"] = Context.Request.Path + Context.Request.QueryString
+  };
+  var json = System.Text.Json.JsonSerializer.Serialize(itemListObj, new System.Text.Json.JsonSerializerOptions{ DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
+}@Html.Raw(json)</script>
+}

@@ -1,0 +1,42 @@
+@{
+    ViewData["Title"] = "Moderasyon Kuyruğu";
+}
+@model IEnumerable<dynamic>
+<div class="container py-3">
+  <h2>Moderasyon Kuyruğu</h2>
+  @if(TempData["Msg"] != null){<div class="alert alert-info">@TempData["Msg"]</div>}
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Başlık</th>
+        <th>Yazar</th>
+        <th>Kategori</th>
+        <th>Tarih</th>
+        <th>Not</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+    @foreach(var q in Model){
+      <tr>
+        <td><a asp-controller="Quiz" asp-action="Detail" asp-route-id="@q.Id">@q.Title</a></td>
+        <td>@q.AuthorUserName</td>
+        <td>@q.Category</td>
+        <td>@q.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+        <td>@q.ModerationNotes</td>
+        <td class="text-nowrap">
+          <form asp-action="Approve" method="post" class="d-inline" aria-label="Quiz onay formu">
+            <input type="hidden" name="id" value="@q.Id" />
+            <button class="btn btn-success btn-sm" type="submit" aria-label="Quiz'i onayla">Onayla</button>
+          </form>
+          <form asp-action="Reject" method="post" class="d-inline ms-1" aria-label="Quiz reddet formu">
+            <input type="hidden" name="id" value="@q.Id" />
+            <input type="hidden" name="reason" value="Uygunsuz içerik" />
+            <button class="btn btn-danger btn-sm" type="submit" aria-label="Quiz'i reddet">Reddet</button>
+          </form>
+        </td>
+      </tr>
+    }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,30 @@
+﻿@{
+    ViewData["Title"] = "Choosr";
+}
+
+<div class="home-page">
+  <section class="hero d-flex flex-column flex-md-row align-items-center gap-4 mb-4">
+      <div class="hero-text flex-grow-1">
+          <h1 class="hero-title">Seç, Sırala, Eğlen!</h1>
+          <p class="hero-sub">Fotoğraf veya videolar ile interaktif turnuva, "O mu, bu mu?" ve kör sıralama deneyimini yaşayın.</p>
+          <div class="d-flex gap-2 mt-3">
+              <a class="btn btn-success btn-sm" asp-controller="CreateQuiz" asp-action="Details">+ Oluştur</a>
+              <a class="btn btn-danger btn-sm" asp-controller="Quiz" asp-action="Index">Quizleri Keşfet</a>
+          </div>
+      </div>
+      <div class="hero-art text-center">
+          <div class="glass-box p-3">
+             <div class="mini-grid">
+                 <div class="g-item">🏆 Turnuva Ağacı</div>
+                 <div class="g-item">🆚 O mu, bu mu?</div>
+                 <div class="g-item">🫣 Kör Sıralama</div>
+                 <div class="g-item">👑 Choosr İle Seç!</div>
+             </div>
+          </div>
+      </div>
+  </section>
+  @await Component.InvokeAsync("EditorPicks")
+  @await Component.InvokeAsync("TrendingQuizzes")
+  @await Component.InvokeAsync("LatestQuizzes")
+  @await Component.InvokeAsync("PopularQuizzes")
+</div>

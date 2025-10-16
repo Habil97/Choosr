@@ -1,0 +1,89 @@
+@inject Choosr.Infrastructure.Services.IUserProfileService Profiles
+<header class="site-header" role="banner">
+  <div class="header-inner layout-container">
+    <div class="h-left d-flex align-items-center gap-3">
+      <a class="navbar-brand logo" asp-controller="Home" asp-action="Index">Choosr</a>
+    </div>
+    <div class="h-center flex-grow-1">
+      <form class="search-form" role="search" asp-controller="Quiz" asp-action="Index" method="get">
+        <input name="q" type="search" class="search-input" placeholder="" aria-label="Ara" />
+        <button class="search-btn" type="submit">Ara</button>
+      </form>
+    </div>
+    <div class="h-right d-flex align-items-center gap-2">
+    <a class="btn btn-sm btn-primary" asp-controller="Quiz" asp-action="Index">Quizler</a>
+      @* Eğer route parametrelerinde bir quiz Id'si varsa liderlik tablosuna hızlı erişim *@
+      @{
+        var route = Context?.Request?.RouteValues;
+        Guid quizId = Guid.Empty;
+        var hasQuiz = route != null && route.ContainsKey("id") && Guid.TryParse(route["id"]?.ToString(), out quizId);
+      }
+      @if(hasQuiz){
+        <a class="btn btn-sm btn-outline-info" asp-controller="Leaderboard" asp-action="Index" asp-route-id="@quizId" title="Liderlik">🏆 Liderlik</a>
+      }
+      <a class="btn btn-sm btn-outline-warning" asp-controller="Play" asp-action="Surprise" title="Sürpriz Quiz">🎲 Sürpriz</a>
+      @if (User.IsInRole("Admin")) {
+        <a class="btn btn-sm btn-outline-info d-none d-md-inline-flex" asp-controller="AdminReports" asp-action="Index" title="Admin">⚙ Admin</a>
+      }
+      <a class="btn btn-sm btn-success" asp-controller="CreateQuiz" asp-action="Details">+ Oluştur</a>
+      @if(User.Identity?.IsAuthenticated==true){
+        @await Component.InvokeAsync("NotificationsBell")
+        var me = Profiles.GetByUserName(User.Identity!.Name!); var avatarUrl = string.IsNullOrWhiteSpace(me?.AvatarUrl) ? "/img/anon-avatar.svg" : me!.AvatarUrl;
+        <div class="dropdown">
+       <button class="btn btn-sm btn-warning dropdown-toggle d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-expanded="false">
+         <span class="avatar-thumb"><img src="@avatarUrl" alt="@User.Identity!.Name" style="width:20px;height:20px;border-radius:50%;object-fit:cover;"/></span>
+            <span>Profil</span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end small">
+            <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Profil</a></li>
+            <li><a class="dropdown-item" asp-controller="Profile" asp-action="Edit">Profili Düzenle</a></li>
+            <li><a class="dropdown-item" asp-controller="Profile" asp-action="ChangePassword">Şifre Değiştir</a></li>
+            @if (User.IsInRole("Admin")){
+              <li><a class="dropdown-item text-warning" asp-controller="AdminReports" asp-action="Index">Raporlar</a></li>
+            }
+            <li><hr class="dropdown-divider"/></li>
+            <li>
+              <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                <button type="submit" class="dropdown-item text-danger">Çıkış</button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      } else {
+        <a class="btn btn-sm btn-success d-none d-md-inline-flex" asp-controller="Account" asp-action="Login">Giriş</a>
+      }
+      <button class="btn btn-sm btn-light d-lg-none" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-label="Menü">≡</button>
+    </div>
+  </div>
+  <div class="offcanvas offcanvas-end bg-dark text-light" tabindex="-1" id="mobileNav" aria-label="Mobil Menü">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Menü</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Kapat"></button>
+    </div>
+    <div class="offcanvas-body">
+      <nav class="mobile-nav d-flex flex-column gap-2">
+        <a class="nav-link" asp-controller="Home" asp-action="Index">Anasayfa</a>
+        <a class="nav-link" asp-controller="Quiz" asp-action="Index">Quizler</a>
+        @* Mobil menüde de aynı koşullu liderlik bağlantısı *@
+        @if(hasQuiz){
+          <a class="nav-link" asp-controller="Leaderboard" asp-action="Index" asp-route-id="@quizId">🏆 Liderlik Tablosu</a>
+        }
+        @if (User.IsInRole("Admin")){
+          <a class="nav-link" asp-controller="AdminReports" asp-action="Index">⚙ Admin</a>
+        }
+        @if(User.Identity?.IsAuthenticated==true){
+          <a class="nav-link" asp-controller="Notifications" asp-action="Index">🔔 Bildirimler</a>
+        }
+        <a class="nav-link" asp-controller="CreateQuiz" asp-action="Details">+ Oluştur</a>
+        @if(User.Identity?.IsAuthenticated==true){
+          <a class="nav-link" asp-controller="Profile" asp-action="Index">Profil</a>
+          <form asp-controller="Account" asp-action="Logout" method="post">
+            <button class="nav-link btn btn-link p-0 text-start" type="submit">Çıkış</button>
+          </form>
+        } else {
+          <a class="nav-link" asp-controller="Account" asp-action="Login">Giriş</a>
+        }
+      </nav>
+    </div>
+  </div>
+</header>

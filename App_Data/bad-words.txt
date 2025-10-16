@@ -1,0 +1,7 @@
+# Minimal Turkish/English placeholder list; expand in production
+fuck
+shit
+siktir
+orospu
+aptal
+salak

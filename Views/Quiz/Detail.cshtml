@@ -1,0 +1,299 @@
+@model Choosr.Web.ViewModels.QuizDetailViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = Model.Title;
+    var similar = (IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel>)ViewBag.Similar;
+    var isSignedIn = User?.Identity?.IsAuthenticated ?? false;
+    var afToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
+    var turnstileSiteKey = cfg?["Turnstile:SiteKey"] ?? cfg?["Cloudflare:Turnstile:SiteKey"];
+}
+@section Head{
+    @{ 
+      var abs = $"{Context.Request?.Scheme}://{Context.Request?.Host}"; 
+      var url = abs + (Context.Request?.Path + Context.Request?.QueryString); 
+      var desc = string.IsNullOrWhiteSpace(Model.Description) ? $"{Model.Title} – Choosr quizi" : Model.Description;
+      // Yardımcılar: mutlak URL ve güvenli (https) URL üretimi
+      string AbsUrl(string? u){ if(string.IsNullOrWhiteSpace(u)) return string.Empty; if(u.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || u.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) return u; return abs + (u.StartsWith("/")? u : "/"+u); }
+      string ToHttps(string u){ if(string.IsNullOrWhiteSpace(u)) return u; if(u.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) return "https://" + u.Substring("http://".Length); return u; }
+      // OG görsel boyutları: varsa modelden, yoksa 1200x630 varsayılanı kullan
+      var ogImgW = Model.CoverImageWidth ?? 1200; var ogImgH = Model.CoverImageHeight ?? 630;
+      var coverAbs = AbsUrl(Model.CoverImageUrl);
+      var coverAbsHttps = ToHttps(coverAbs);
+      // Video tespiti (YouTube): ilk video linkinden embed URL çıkar
+      string? ToYouTubeEmbed(string? yt){
+        if(string.IsNullOrWhiteSpace(yt)) return null;
+        try{
+          var uo = new Uri(yt, UriKind.RelativeOrAbsolute);
+          var s = yt;
+          if(!uo.IsAbsoluteUri){ s = AbsUrl(yt); uo = new Uri(s); }
+          var host = uo.Host.ToLowerInvariant();
+          string? id = null;
+          if(host.Contains("youtu.be")){
+            id = uo.AbsolutePath.Trim('/');
+          }else if(host.Contains("youtube.com")){
+            var q = System.Web.HttpUtility.ParseQueryString(uo.Query);
+            id = q["v"];
+            if(string.IsNullOrWhiteSpace(id) && uo.AbsolutePath.Contains("/embed/")){
+              var parts = uo.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+              var idx = Array.IndexOf(parts, "embed"); if(idx>=0 && idx+1<parts.Length) id = parts[idx+1];
+            }
+          }
+          return string.IsNullOrWhiteSpace(id) ? null : $"https://www.youtube.com/embed/{id}?feature=oembed";
+        }catch{ return null; }
+      }
+      var firstVideo = (Model.Choices ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizChoiceViewModel>()).FirstOrDefault(c => !string.IsNullOrWhiteSpace(c.YoutubeUrl));
+      var ytEmbed = ToYouTubeEmbed(firstVideo?.YoutubeUrl);
+      var hasVideo = !string.IsNullOrWhiteSpace(ytEmbed);
+      var ogVideoW = 1280; var ogVideoH = 720; // varsayılan player ölçüleri
+    }
+    <link rel="canonical" href="@url" />
+    <meta name="description" content="@desc" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="@Model.Title" />
+    <meta property="og:description" content="@desc" />
+    <meta property="og:url" content="@url" />
+    <meta property="og:image" content="@coverAbs" />
+    <meta property="og:image:secure_url" content="@coverAbsHttps" />
+    <meta property="og:image:width" content="@ogImgW" />
+    <meta property="og:image:height" content="@ogImgH" />
+    @if(hasVideo){
+      <meta property="og:video" content="@ytEmbed" />
+      <meta property="og:video:secure_url" content="@ytEmbed" />
+      <meta property="og:video:type" content="text/html" />
+      <meta property="og:video:width" content="@ogVideoW" />
+      <meta property="og:video:height" content="@ogVideoH" />
+    }
+    <!-- Twitter Cards -->
+    @if(hasVideo){
+      <meta name="twitter:card" content="player" />
+      <meta name="twitter:player" content="@ytEmbed" />
+      <meta name="twitter:player:width" content="@ogVideoW" />
+      <meta name="twitter:player:height" content="@ogVideoH" />
+    } else {
+      <meta name="twitter:card" content="summary_large_image" />
+    }
+    <meta name="twitter:title" content="@Model.Title" />
+    <meta name="twitter:description" content="@desc" />
+    <meta name="twitter:image" content="@coverAbsHttps" />
+    <meta name="twitter:image:alt" content="@Model.Title" />
+    @* JSON-LD Structured Data *@
+  @{ 
+    string San(string? s){ return (s??string.Empty).Trim(); }
+    var kw = (Model.Tags??Array.Empty<string>()).Where(t=>!string.IsNullOrWhiteSpace(t)).Select(t=>t.Trim()).ToArray();
+    var similarList = (similar ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizCardViewModel>()).Take(5).ToList();
+    // Build POCO dictionaries to avoid Razor anonymous object parsing confusion
+    var breadcrumb = new System.Collections.Generic.Dictionary<string, object?>{
+      ["@context"] = "https://schema.org",
+      ["@type"] = "BreadcrumbList",
+      ["itemListElement"] = new object[]{
+        new System.Collections.Generic.Dictionary<string, object?>{ ["@type"]="ListItem", ["position"]=1, ["name"]="Ana Sayfa", ["item"]=abs+"/" },
+        new System.Collections.Generic.Dictionary<string, object?>{ ["@type"]="ListItem", ["position"]=2, ["name"]=Model.Category, ["item"]=abs+"/Quiz?category="+Uri.EscapeDataString(Model.Category) },
+        new System.Collections.Generic.Dictionary<string, object?>{ ["@type"]="ListItem", ["position"]=3, ["name"]=Model.Title, ["item"]=url }
+      }
+    };
+    var quizObj = new System.Collections.Generic.Dictionary<string, object?>{
+      ["@context"] = "https://schema.org",
+      ["@type"] = "CreativeWork",
+      ["name"] = San(Model.Title),
+      ["description"] = San(desc).Length>300? San(desc).Substring(0,297)+"...":San(desc),
+      ["url"] = url,
+  ["image"] = coverAbs,
+      ["author"] = new System.Collections.Generic.Dictionary<string, object?>{ ["@type"]="Person", ["name"] = Model.AuthorUserName },
+      ["datePublished"] = Model.CreatedAt.ToString("yyyy-MM-dd"),
+      ["keywords"] = kw,
+      ["interactionStatistic"] = new object[]{ new System.Collections.Generic.Dictionary<string, object?>{ ["@type"]="InteractionCounter", ["interactionType"]="https://schema.org/PlayAction", ["userInteractionCount"] = Model.Plays } },
+      ["commentCount"] = Model.Comments,
+      ["inLanguage"] = "tr",
+      ["publisher"] = new System.Collections.Generic.Dictionary<string, object?>{ ["@type"]="Organization", ["name"]="Choosr" },
+      ["aggregateRating"] = new System.Collections.Generic.Dictionary<string, object?>{ ["@type"]="AggregateRating", ["ratingValue"]="5", ["ratingCount"] = Math.Max(1, Model.Reactions) }
+    };
+    var similarListLd = new System.Collections.Generic.Dictionary<string, object?>{
+      ["@context"] = "https://schema.org",
+      ["@type"] = "ItemList",
+      ["name"] = "Benzer Quizler",
+      ["itemListOrder"] = "https://schema.org/ItemListOrderDescending",
+      ["itemListElement"] = similarList.Select((x,i)=> new System.Collections.Generic.Dictionary<string, object?>{
+        ["@type"] = "ListItem",
+        ["position"] = i+1,
+        ["url"] = abs+"/Quiz/Detail/"+x.Id,
+        ["name"] = x.Title
+      }).ToArray()
+    };
+    string ToJson(object o){ return System.Text.Json.JsonSerializer.Serialize(o, new System.Text.Json.JsonSerializerOptions{ PropertyNamingPolicy = null }); }
+  }
+  <script type="application/ld+json" nonce="@(Context.Items["CspNonce"])" >@Html.Raw(ToJson(breadcrumb))</script>
+  <script type="application/ld+json" nonce="@(Context.Items["CspNonce"])" >@Html.Raw(ToJson(quizObj))</script>
+  @if(((IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel>)ViewBag.Similar ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizCardViewModel>()).Any()){
+    <script type="application/ld+json" nonce="@(Context.Items["CspNonce"])" >@Html.Raw(ToJson(similarListLd))</script>
+  }
+}
+
+<section class="quiz-detail layout-container">
+  <div class="row g-4">
+    <!-- Left: Main content -->
+    <div class="col-lg-8">
+      <div class="qd-top d-flex gap-3 flex-wrap align-items-start">
+        <div class="qd-cover">
+          @{ var cw = Model.CoverImageWidth; var ch = Model.CoverImageHeight; var cwh = (cw.HasValue && ch.HasValue) ? $" width=\"{cw}\" height=\"{ch}\"" : " width=\"160\" height=\"160\""; }
+          <img src="@Model.CoverImageUrl" alt="@Model.Title" fetchpriority="high"@Html.Raw(cwh) />
+          <a class="btn btn-play w-100 mt-2" asp-controller="Play" asp-action="Mode" asp-route-id="@Model.Id">▷ OYNA</a>
+        </div>
+        <div class="qd-main flex-grow-1">
+          <div class="qd-flags mb-2">
+            @if(Model.IsEditorPick){<span class="chip chip-editor">Editörün Seçimi</span>}
+            @if(Model.IsTrending){<span class="chip chip-trend">Trend</span>}
+          </div>
+          <h1 class="qd-title m-0">@Model.Title</h1>
+          @if(!string.IsNullOrWhiteSpace(Model.Description)){
+            <p class="qd-desc">@Model.Description</p>
+          }
+          <div class="qd-author-pill">
+            <div class="avatar sm"><img src="@(Model.AuthorAvatarUrl ?? "/favicon.ico")" alt="@Model.AuthorUserName" /></div>
+            <div class="by">Oluşturan</div>
+            <div class="name">@Model.AuthorUserName</div>
+          </div>
+          <div class="qd-chips mt-2">
+            <span class="chip chip-cat">@Model.Category</span>
+            @foreach(var t in Model.Tags){<span class="chip chip-tag">@t</span>}
+          </div>
+          <div class="qd-meta mt-2">
+            <span class="stat">▶ @Model.Plays</span>
+            <span class="dot"></span>
+            <span class="stat">❤ @Model.Reactions</span>
+            <span class="dot"></span>
+            <span class="stat">💬 <span data-qc>@Model.Comments</span></span>
+          </div>
+          <div class="qd-actions mt-3">
+            <div class="reaction-bar d-flex flex-wrap gap-2" data-reactbar data-quizid="@Model.Id">
+              <meta name="request-verification-token" content="@afToken" />
+              <button type="button" class="rx" data-type="like" title="Beğendim" aria-label="Beğeni reaksiyonu gönder"><i class="e">👍</i><span>0</span></button>
+              <button type="button" class="rx" data-type="love" title="Bayıldım" aria-label="Sevgi reaksiyonu gönder"><i class="e">❤</i><span>0</span></button>
+              <button type="button" class="rx" data-type="haha" title="Güldüm" aria-label="Gülme reaksiyonu gönder"><i class="e">😂</i><span>0</span></button>
+              <button type="button" class="rx" data-type="wow" title="Vay be" aria-label="Şaşırma reaksiyonu gönder"><i class="e">😮</i><span>0</span></button>
+              <button type="button" class="rx" data-type="sad" title="Üzüldüm" aria-label="Üzüntü reaksiyonu gönder"><i class="e">😢</i><span>0</span></button>
+              <button type="button" class="rx" data-type="angry" title="Kızdım" aria-label="Öfke reaksiyonu gönder"><i class="e">😠</i><span>0</span></button>
+              @if(!isSignedIn){<div class="small text-secondary ms-2">Reaksiyon vermek için giriş yapın. <a asp-controller="Account" asp-action="Login" class="text-warning">Giriş Yap →</a></div>}
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center mt-2">
+              <button class="btn btn-share" type="button" data-share aria-label="Quiz paylaşım seçeneklerini aç">Paylaş:</button>
+              <button class="btn btn-outline-danger btn-sm" type="button" data-report-quiz aria-label="Quiz'i rapor et">Rapor Et</button>
+              <div class="qd-share d-flex flex-wrap gap-2">
+              @{ var baseUrl = $"{Context.Request?.Scheme}://{Context.Request?.Host}"; var fullUrl = baseUrl + (Context.Request?.Path + Context.Request?.QueryString); }
+              <a class="si" title="WhatsApp" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?text=@Uri.EscapeDataString(Model.Title) @Uri.EscapeDataString(fullUrl)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="18" height="18" fill="currentColor"><path d="M380.9 97.1C339-2.7 222.5-32 132.9 19.1S-32 222.5 19.1 312.1C61 412 177.5 441.7 267.1 390.6c20.7-11.5 39-27.1 53.9-45.7l78.9 20.9c17.1 4.5 33.3-9.9 29.6-27.2l-17.9-85.6c8.5-21.9 13.2-45.7 13.2-70.3 0-32.2-7.8-62.6-21.9-89.6zM224 368c-79.5 0-144-64.5-144-144S144.5 80 224 80s144 64.5 144 144-64.5 144-144 144zm76.5-97.9l-32.6-7.8c-4.7-1.1-9.6.5-12.9 4.2l-14.6 16.4c-22.5-11.9-41.4-30.7-53.3-53.3l16.4-14.6c3.7-3.3 5.3-8.2 4.2-12.9l-7.8-32.6c-2-8.4-10-13.9-18.5-12.3l-28.2 5.6c-8.8 1.7-15.1 9.6-15.1 18.5 0 88.4 71.6 160 160 160 8.9 0 16.8-6.3 18.5-15.1l5.6-28.2c1.6-8.5-3.9-16.5-12.3-18.5z"/></svg>
+            </a>
+            <a class="si" title="X" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=@Uri.EscapeDataString(Model.Title)&url=@Uri.EscapeDataString(fullUrl)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18" fill="currentColor"><path d="M389.2 48H470L304.6 246.4 499.8 464H351.9L232.7 327.1 96.6 464H15.8L192.5 251.8 3.8 48H155.9L262.4 173.9 389.2 48zM362.6 421.7h40.2L151 88.1H108.2l254.4 333.6z"/></svg>
+            </a>
+            <a class="si" title="Facebook" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(fullUrl)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="18" height="18" fill="currentColor"><path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06H295V6.26S259.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></svg>
+            </a>
+            <a class="si" title="Reddit" target="_blank" rel="noopener" href="https://www.reddit.com/submit?url=@Uri.EscapeDataString(fullUrl)&title=@Uri.EscapeDataString(Model.Title)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18" fill="currentColor"><path d="M440 144c-30.9 0-56 25.1-56 56 0 5.3.7 10.5 2.1 15.3-26.9-12.1-59.8-19.7-96.1-21.1l19.7-92.5 64.5 13.7c2.2 32 28.9 57.3 61.6 57.3 34.2 0 62-27.8 62-62s-27.8-62-62-62c-24.3 0-45.3 14.2-55.2 34.7l-75.8-16.1c-8.3-1.8-16.5 3.6-18.3 11.9l-22.3 104.7C253.7 187.5 223 196 195 209.3c-1.2-4.9-1.9-10-1.9-15.3 0-30.9-25.1-56-56-56s-56 25.1-56 56c0 22.4 13 41.8 31.7 50.9-2.1 8.1-3.2 16.6-3.2 25.3 0 73.4 85.9 132.8 192 132.8s192-59.4 192-132.8c0-8.7-1.1-17.2-3.2-25.3 18.6-9.1 31.7-28.4 31.7-50.9 0-30.9-25.1-56-56-56zM168 264c17.7 0 32 14.3 32 32 0 17.6-14.3 32-32 32-17.7 0-32-14.4-32-32 0-17.7 14.3-32 32-32zm202.9 104.6C345.8 377.5 312.5 384 272 384c-40.5 0-73.8-6.5-98.9-15.4-6.7-2.4-11.1-9.1-10.1-16l.1-.5c1.1-8.6 9-14.5 17.5-13.2 24.7 3.7 56.3 6.1 91.4 6.1 35.1 0 66.7-2.4 91.4-6.1 8.5-1.3 16.4 4.6 17.5 13.2l.1.5c1 6.8-3.4 13.5-10 16zM344 264c17.7 0 32 14.3 32 32 0 17.6-14.3 32-32 32-17.7 0-32-14.4-32-32 0-17.7 14.3-32 32-32z"/></svg>
+            </a>
+            <a class="si" title="Telegram" target="_blank" rel="noopener" href="https://t.me/share/url?url=@Uri.EscapeDataString(fullUrl)&text=@Uri.EscapeDataString(Model.Title)">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512" width="18" height="18" fill="currentColor"><path d="M248,8C111,8,0,119,0,256s111,248,248,248,248-111,248-248S385,8,248,8Zm121.8,169.9L330.6,375.4c-3.7,16.5-15,20.6-30.4,12.8l-84-62.1-40.5,39c-4.5,4.5-8.2,8.2-16.8,8.2l6-85.1,154.9-139.9c6.7-5.9-1.5-9.2-10.4-3.3L166.6,277.7l-83.9-26.2c-18.2-5.7-18.6-18.2,3.8-26.9l327.9-126.4C432.1,92.6,381.4,144.6,369.8,177.9Z"/></svg>
+            </a>
+            <a href="#" class="si" title="Kopyala" data-copy>Link</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qd-similar mt-5">
+        <h5 class="mb-2 text-warning">Benzer Quizler</h5>
+        @{ var similarList = (similar ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizCardViewModel>()).ToList(); }
+        <div class="quiz-cards small-grid" data-similar data-step="4">
+          @for(int i=0;i<similarList.Count;i++){
+            var s = similarList[i];
+            var hidden = i >= 4 ? "display:none" : null;
+            <div class="sim" data-idx="@i" style="@hidden">
+              <partial name="~/Views/Shared/Partials/_QuizCard.cshtml" model="s" />
+            </div>
+          }
+        </div>
+        @if(similarList.Count > 4){
+          <div class="mt-2 text-center"><button type="button" class="btn btn-sm btn-outline-light" data-similar-more aria-label="Daha fazla benzer quiz yükle">Daha fazla yükle</button></div>
+        }
+      </div>
+    </div><!-- /col-lg-8 -->
+
+    <!-- Right: Sidebar -->
+    <div class="col-lg-4">
+      <aside class="qd-side">
+        <div class="qd-winners card-like mb-3">
+          <div class="title d-flex align-items-center justify-content-between">
+            <span>Kazanan Seçimler</span>
+          </div>
+          <div class="content">
+              <ol class="list-unstyled m-0 p-0" data-winners>
+              @{
+                var hasAny = Model.Choices.Any(c=>c.Champions>0 || c.Matches>0);
+              }
+              @if(hasAny){
+                var winnersOrdered = Model.Choices.OrderByDescending(c=>c.ChampionRate).ThenByDescending(c=>c.WinRate).ToList();
+                for(int i=0;i<winnersOrdered.Count;i++){
+                  var item = winnersOrdered[i];
+                  var rank = i+1;
+                  var hidden = i >= 5 ? "display:none" : null;
+                  <li class="stat-item" data-idx="@i" style="padding: .75rem; border-bottom: 1px solid var(--c-border); @hidden">
+                    <div class="d-flex align-items-start gap-3">
+                      <div style="width:60px;height:60px;border-radius:10px;overflow:hidden;border:2px solid rgba(255,255,255,.1);flex:0 0 auto;">
+                        <img src="@item.ImageUrl" alt="@item.Caption" loading="lazy" decoding="async" width="60" height="60" style="width:100%;height:100%;object-fit:cover;" />
+                      </div>
+                      <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-baseline">
+                          <div style="font-weight:700;">@item.Caption</div>
+                          <div class="text-secondary small">#@rank</div>
+                        </div>
+                        <div class="small text-secondary mt-1">Şampiyonluk Oranı: <strong>%@item.ChampionRate</strong></div>
+                        <div class="progress tiny"><div class="progress-bar danger" style="width:@item.ChampionRate%"></div></div>
+                        <div class="small text-secondary mt-2">Kazanma Oranı: <strong>%@item.WinRate</strong></div>
+                        <div class="progress tiny"><div class="progress-bar primary" style="width:@item.WinRate%"></div></div>
+                      </div>
+                    </div>
+                  </li>
+                }
+                if(winnersOrdered.Count > 5){
+                  <div class="mt-2 text-center"><button type="button" class="btn btn-sm btn-outline-light" data-winners-more aria-label="Daha fazla kazanan seçim göster">Daha fazla yükle</button></div>
+                }
+              } else {
+                <div class="text-secondary">Henüz istatistik yok. İlk sen oyna!</div>
+              }
+              </ol>
+          </div>
+        </div>
+
+        <div class="qd-comments card-like">
+          <div class="title">Yorumlar (<span data-cnt>@Model.Comments</span>)</div>
+          @if(isSignedIn){
+            <form method="post" class="comment-form" data-cf>
+              <meta name="request-verification-token" content="@afToken" />
+              <textarea class="form-control" name="text" maxlength="5000" rows="3" placeholder="Yorumunuzu girin"></textarea>
+              <div class="mt-2">
+                <div class="cf-turnstile" data-sitekey="@turnstileSiteKey"></div>
+              </div>
+              <div class="d-flex justify-content-end mt-2"><button class="btn btn-sm btn-primary" type="submit" aria-label="Yorumu gönder">Gönder</button></div>
+            </form>
+          } else {
+            <div class="comment-login-cta">
+              <p>Yorum yapmak için giriş yapın.</p>
+              <a class="btn btn-sm btn-outline-light" asp-controller="Account" asp-action="Login">Giriş yap →</a>
+            </div>
+          }
+          <div class="comment-list mt-3" data-cl>
+            <div class="text-muted small" data-empty>Henüz yorum yok. İlk yorumu sen yap!</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+@section Scripts{
+<script src="/js/quizDetail.js" nonce="@(Context.Items["CspNonce"])" defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+}

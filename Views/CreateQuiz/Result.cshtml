@@ -1,0 +1,21 @@
+@model Choosr.Web.ViewModels.CreateQuizResultStepViewModel
+@{
+    ViewData["Title"] = "Quiz Oluştur - Sonuç";
+}
+<div class="wizard-steps mb-4"><span class="done">1</span><span class="done">2</span><span class="active">3</span></div>
+<h1 class="hero-title mb-3">Quiz Oluştur</h1>
+<div class="glass-box p-4" style="max-width:680px;">
+  <p class="text-muted">Lütfen quiziniz oluşturulurken bekleyin. Bu işlem birkaç saniye sürebilir.</p>
+  <div class="progress mb-3" style="height:8px;">
+    <div class="progress-bar bg-success" style="width:100%"></div>
+  </div>
+  @if(Model.Success){
+    <div class="alert alert-success d-flex align-items-center gap-2">✅ Quiz başarıyla oluşturuldu</div>
+    <div class="d-flex gap-2">
+  <a class="btn btn-warning" asp-controller="Profile" asp-action="Index" aria-label="Oluşturduğum quizi profilimde aç">Quiz'e Git →</a>
+    </div>
+    <div class="alert alert-secondary mt-3 small">Quiziniz henüz listelenmemiş olsa da endekseleme süreci devam ediyor. Şu anda yalnızca linke sahip olan kişiler görebilir. Onaylandıktan sonra listelerde görünecektir.</div>
+  } else {
+    <div class="alert alert-danger">@Model.Message</div>
+  }
+</div>

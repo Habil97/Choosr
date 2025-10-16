@@ -1,0 +1,16 @@
+@* Dinamik etiket çubuğu; ViewBag.Tags = IEnumerable<string>, ViewBag.SelectedTag = string *@
+@{
+    var tags = ViewBag.Tags as IEnumerable<string> ?? Array.Empty<string>();
+    string? selected = ViewBag.SelectedTag as string;
+}
+<div class="tag-filter-bar" data-tag-bar>
+  <div class="tags-scroll" data-tags-container>
+    <a class="tag-chip @(string.IsNullOrWhiteSpace(selected)?"active":"")" href="@Url.Action("Index","Quiz", new { tag = (string?)null, category = (string?)ViewBag.Category, q = (string?)ViewBag.Q })">Tümü</a>
+    @foreach(var t in tags){
+        if(!string.IsNullOrWhiteSpace(t)){
+            var isActive = string.Equals(t, selected, StringComparison.OrdinalIgnoreCase);
+            <a class="tag-chip @(isActive?"active":"")" href="@Url.Action("Index","Quiz", new { tag = t.ToLower(), category = (string?)ViewBag.Category, q = (string?)ViewBag.Q })" data-tag="@t.ToLower()">@t</a>
+        }
+    }
+  </div>
+</div>

@@ -1,0 +1,8 @@
+@model (IEnumerable<string> Categories, string? Selected)
+<div class="category-select d-flex flex-wrap gap-2 mb-3">
+  <a class="btn btn-sm @(Model.Selected==null?"btn-warning":"btn-outline-warning")" asp-controller="Quiz" asp-action="Index">Tümü</a>
+  @foreach (var c in Model.Categories)
+  {
+      <a class="btn btn-sm @(Model.Selected==c?"btn-warning":" btn-outline-warning")" asp-controller="Quiz" asp-action="Index" asp-route-category="@c">@c</a>
+  }
+</div>

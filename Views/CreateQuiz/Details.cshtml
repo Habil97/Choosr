@@ -1,0 +1,182 @@
+@model Choosr.Web.ViewModels.CreateQuizDetailsStepViewModel
+@{
+    ViewData["Title"] = "Quiz Oluştur";
+  var categories = (IEnumerable<Choosr.Web.Services.CategoryDto>)ViewBag.Categories;
+  var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
+  var turnstileSiteKey = cfg?["Turnstile:SiteKey"] ?? cfg?["Cloudflare:Turnstile:SiteKey"];
+}
+<h1 class="hero-title mb-3">Quiz Oluştur</h1>
+<div class="wizard-steps mb-3"><span class="active">1</span><span>2</span><span>3</span></div>
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="glass-box p-4">
+      <h5 class="section-title">Quiz Detayları</h5>
+  <form method="post" enctype="multipart/form-data" class="vstack gap-3" id="quizDetailsForm">
+    <input type="hidden" name="IdemToken" value="@((string)ViewBag.IdemToken ?? string.Empty)" />
+    <input type="hidden" id="draftIdInput" value="" />
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Ana Dil *</label>
+            <select asp-for="PrimaryLanguage" class="form-select form-select-sm" aria-label="Quiz ana dil seçimi">
+              <option value="tr">Türkçe</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Kategori *</label>
+            <select asp-for="Category" class="form-select form-select-sm" id="categoryInput" aria-label="Kategori seçimi">
+              <option value="">Seçiniz</option>
+              @foreach(var c in categories){<option value="@c.Name">@c.Icon @c.Name</option>}
+            </select>
+            <span class="text-danger" asp-validation-for="Category"></span>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Başlık *</label>
+          <input asp-for="Title" class="form-control form-control-sm" id="titleInput" aria-label="Quiz başlığı" />
+          <span class="text-danger" asp-validation-for="Title"></span>
+        </div>
+        <div>
+          <label class="form-label">Açıklama</label>
+          <textarea asp-for="Description" rows="3" class="form-control form-control-sm" id="descInput" aria-label="Quiz açıklaması"></textarea>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Oluşturan</label>
+            <div class="d-flex align-items-center gap-2">
+               <label class="auth-check m-0"><input type="radio" name="IsAnonymous" value="false" @(Model.IsAnonymous?"":"checked") aria-label="Oluşturan adım görünsün" /> <span>@(User.Identity?.Name ?? "Kullanıcı")</span></label>
+               <label class="auth-check m-0"><input type="radio" name="IsAnonymous" value="true" @(Model.IsAnonymous?"checked":"") aria-label="Anonim oluştur" /> <span>Anonim</span></label>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Görünürlük</label>
+            <div class="d-flex align-items-center gap-2">
+               <label class="auth-check m-0"><input type="radio" name="Visibility" value="public" @(Model.Visibility=="public"?"checked":"") aria-label="Quiz herkese açık" /> <span>Herkese Açık</span></label>
+               <label class="auth-check m-0"><input type="radio" name="Visibility" value="unlisted" @(Model.Visibility=="unlisted"?"checked":"") aria-label="Quiz liste dışı" /> <span>Liste Dışı</span></label>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Kapak Resmi</label>
+          <div class="d-flex gap-3 align-items-center">
+            <div class="qc-thumb" style="width:220px;height:120px;overflow:hidden;border-radius:8px;border:1px solid var(--c-border);"><img id="coverPreview" src="/favicon.ico" alt=""/></div>
+            <input type="hidden" id="coverPath" name="CoverPath" value="" />
+            <div>
+              <input type="file" class="form-control form-control-sm" id="coverInput" name="CoverFile" accept="image/*" aria-label="Kapak resmi seç" />
+              <small class="text-muted">JPG, PNG, GIF, WEBP (max 10MB)</small>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Etiketler</label>
+          <div class="d-flex gap-2">
+            <input id="tagsInput" type="text" class="form-control form-control-sm" placeholder="Etiketler" aria-label="Etiket gir" />
+            <button type="button" class="btn btn-sm btn-outline-warning" id="addTagBtn" aria-label="Etiketi ekle">Ekle</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="suggestTagsBtn" aria-label="Etiket önerilerini getir">Öner</button>
+          </div>
+          <div id="tagsList" class="d-flex gap-2 mt-2 flex-wrap"></div>
+          <input type="hidden" name="TagsCsv" id="tagsCsv" />
+        </div>
+        <div class="mt-2">
+          @if(!string.IsNullOrWhiteSpace(turnstileSiteKey)){
+            <div class="cf-turnstile" data-sitekey="@turnstileSiteKey"></div>
+          }
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-1">
+          <a asp-controller="Home" asp-action="Index" class="btn btn-outline-light btn-sm" aria-label="Ana sayfaya dön">← Önceki</a>
+          <button class="btn btn-warning btn-sm" type="submit" aria-label="Sonraki adıma geç">Sonraki →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="glass-box p-3">
+      <h6 class="section-title">Önizleme</h6>
+      <div class="quiz-card home-compact" style="max-width:320px;">
+  <div class="qc-thumb-wrap"><img class="qc-thumb" id="prevCover" src="/favicon.ico" alt=""/></div>
+        <div class="qc-body">
+          <div class="qc-title" id="prevTitle">Başlık</div>
+          <div class="qc-author"><span class="me-1" id="prevAuthor">@(User.Identity?.Name ?? "Anonim")</span></div>
+          <div class="qc-category" id="prevCategory">Kategori</div>
+          <div class="qc-stats-line"><span>💬 0</span><span>❤ 0</span><span id="prevTags">etiket yok</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="glass-box p-3 mt-3">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h6 class="section-title m-0">Taslak Geçmişi</h6>
+  <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshRevsBtn" aria-label="Taslak revizyon listesini yenile">Yenile</button>
+      </div>
+      <div id="revList" class="list-group small" aria-live="polite">
+        <div class="text-muted">Henüz kayıt yok.</div>
+      </div>
+    </div>
+  </div>
+</div>
+@section Scripts{
+<partial name="_ValidationScriptsPartial" />
+<script src="/js/createQuizDetails.js" nonce="@(Context.Items["CspNonce"])" defer></script>
+  @if(!string.IsNullOrWhiteSpace(turnstileSiteKey)){
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  }
+<script nonce="@(Context.Items["CspNonce"])">
+// Taslak revizyonları: liste + önizleme
+(function(){
+  const revList = document.getElementById('revList');
+  const btn = document.getElementById('refreshRevsBtn');
+  const input = document.getElementById('draftIdInput');
+  async function load(){
+    if(!input || !input.value) return;
+    try{
+      const r = await fetch('/Drafts/Revisions?id='+encodeURIComponent(input.value));
+      if(!r.ok) return;
+      const items = await r.json();
+      revList.innerHTML = '';
+      if(!items || items.length===0){ revList.innerHTML = '<div class="text-muted">Henüz kayıt yok.</div>'; return; }
+      for(const it of items){
+        const a = document.createElement('a'); a.href = 'javascript:void(0)'; a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+        const dt = new Date(it.createdAt);
+        a.innerHTML = '<span><span class="badge rounded-pill bg-secondary me-2">'+ dt.toLocaleTimeString() +'</span>' + (it.title||'(başlıksız)') + '</span>' +
+                      '<span class="text-nowrap ms-2">' + dt.toLocaleDateString() + '</span>';
+        a.addEventListener('click',()=> preview(it.id));
+        revList.appendChild(a);
+      }
+    }catch{}
+  }
+  async function preview(revId){
+    try{
+      const id = input.value; if(!id) return;
+      const r = await fetch('/Drafts/Revision?id='+encodeURIComponent(id)+'&revId='+encodeURIComponent(revId));
+      if(!r.ok) return;
+      const v = await r.json();
+      const safe = s=> (s||'').toString().replace(/</g,'&lt;');
+      let choices = [];
+      try{ choices = JSON.parse(v.choicesJson||'[]'); }catch{}
+      const dlg = document.createElement('div');
+      dlg.className='modal fade'; dlg.tabIndex=-1; dlg.innerHTML = `
+      <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">Revizyon Önizleme</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button></div>
+          <div class="modal-body">
+            <div class="mb-2"><strong>Başlık:</strong> ${safe(v.title)}</div>
+            <div class="mb-2"><strong>Kategori:</strong> ${safe(v.category)} <strong class="ms-3">Görünürlük:</strong> ${safe(v.visibility)}</div>
+            <div class="mb-2"><strong>Anonim:</strong> ${v.isAnonymous? 'Evet':'Hayır'}</div>
+            <div class="mb-2"><strong>Etiketler:</strong> ${(v.tags||[]).map(t=>'#'+safe(t)).join(' ')}</div>
+            <div class="mb-3"><strong>Açıklama:</strong><br/><div class="border rounded p-2">${safe(v.description)}</div></div>
+            <div class="mb-2"><strong>Seçenekler (${choices.length}):</strong></div>
+            <div class="row g-2">${choices.map(c=>`<div class='col-6'><div class='border rounded p-2 small'>${c.ImageUrl?`<img src='${c.ImageUrl}' alt='' class='img-fluid mb-1'/>`:''}<div>${safe(c.Caption)}</div></div></div>`).join('')}</div>
+          </div>
+          <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button></div>
+        </div>
+      </div>`;
+      document.body.appendChild(dlg);
+      const m = new bootstrap.Modal(dlg); m.show();
+      dlg.addEventListener('hidden.bs.modal',()=>{ dlg.remove(); });
+    }catch{}
+  }
+  if(btn) btn.addEventListener('click', load);
+  // Autoload after draft id is set by autosave
+  setTimeout(load, 1500);
+})();
+</script>
+}

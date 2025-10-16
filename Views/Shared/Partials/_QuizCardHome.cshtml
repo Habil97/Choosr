@@ -1,0 +1,52 @@
+@model Choosr.Web.ViewModels.QuizCardViewModel
+@{
+   var cover = string.IsNullOrWhiteSpace(Model.CoverImageUrl) ? "/img/sample1.jpg" : Model.CoverImageUrl;
+   Func<string,string> CatIcon = (cat) =>
+   {
+      if(string.IsNullOrWhiteSpace(cat)) return "🧩";
+      switch(cat.Trim().ToLowerInvariant())
+      {
+         case "yaşam": return "🌿";
+         case "spor": return "🏅";
+         case "film": return "🎬";
+         case "müzik": return "🎵";
+         case "eglence":
+         case "eğlence": return "🎉";
+         case "teknoloji": return "💡";
+         case "yemek": return "🍽️";
+         default: return "🧩";
+      }
+   };
+}
+@{
+   var tagAttr = string.Join(' ', (Model.Tags ?? Enumerable.Empty<string>()).Select(t => t.ToLower()));
+   var allTags = string.Join(' ', new[]{Model.Category?.ToLower() ?? string.Empty, tagAttr}.Where(s=>!string.IsNullOrWhiteSpace(s)));
+   var isAnon = string.IsNullOrWhiteSpace(Model.AuthorUserName) || string.Equals(Model.AuthorUserName, "anon", StringComparison.OrdinalIgnoreCase);
+   var displayAuthor = isAnon ? "Anonim" : (Model.AuthorUserName ?? "Anonim");
+   var avatarUrl = string.IsNullOrWhiteSpace(Model.AuthorAvatarUrl) ? "/img/anon-avatar.svg" : Model.AuthorAvatarUrl;
+}
+<a class="quiz-card v2 text-decoration-none" asp-controller="Quiz" asp-action="Detail" asp-route-id="@Model.Id" data-quiz-id="@Model.Id" data-tags="@allTags" aria-label="Quiz detayına git: @Model.Title" rel="internal" title="@Model.Title - @Model.Category kategorisi quiz">
+   <div class="qc-media">
+   @{ var w = Model.CoverImageWidth; var h = Model.CoverImageHeight; var wh = (w.HasValue && h.HasValue) ? $" width=\"{w}\" height=\"{h}\"" : " width=\"320\" height=\"180\""; }
+   <img src="@cover" alt="@Model.Title" loading="lazy" decoding="async" fetchpriority="low"@Html.Raw(wh) sizes="(max-width: 599px) 48vw, (max-width: 991px) 31.5vw, (max-width: 1399px) 23.5vw, 19.2vw" srcset="@cover 480w, @cover 720w, @cover 1080w" />
+      <div class="qc-overlay"></div>
+      <div class="qc-top-left">
+         @if(Model.IsEditorPick){<span class="chip chip-editor" title="Editör Seçimi">Editör</span>}
+         @if(Model.IsTrending){<span class="chip chip-trend" title="Trend">Trend</span>}
+      </div>
+   </div>
+   <div class="qc-body">
+      <h3 class="qc-title" title="@Model.Title">@Model.Title</h3>
+      <div class="qc-meta-line">
+         <span class="author" title="@displayAuthor"><span class="avatar"><img src="@avatarUrl" alt="@displayAuthor" width="16" height="16" loading="lazy" decoding="async" /></span><span class="name">@displayAuthor</span></span>
+         <span class="dot"></span>
+         <span class="meta-cat" title="@Model.Category"><span class="cat-icon" aria-hidden="true">@CatIcon(Model.Category ?? string.Empty)</span> @Model.Category</span>
+      </div>
+   </div>
+      <div class="qc-bar">
+         <span class="stat" title="Oynanma"><span class="ico">▶</span> @Model.Plays</span>
+         <span class="stat" title="Öğe Sayısı"><span class="ico">🗂</span> @Model.ItemsCount</span>
+         <span class="stat" title="Yorum"><span class="ico">💬</span> @Model.Comments</span>
+         <span class="stat" title="Tepki"><span class="ico">❤</span> @Model.Reactions</span>
+      </div>
+</a>

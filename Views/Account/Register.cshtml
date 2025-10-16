@@ -1,0 +1,55 @@
+@{ViewData["Title"]="Kayıt Ol";}
+<div class="auth-page">
+  <div class="auth-left">
+     <h1 class="auth-title mb-2">Kayıt Ol</h1>
+  <div class="auth-switch small mb-4">Zaten hesabınız var mı? <a asp-action="Login">Giriş Yap →</a></div>
+     <div class="vstack gap-2">
+        <button type="button" class="auth-oauth-btn"><span>🟢</span> Google ile Kayıt Ol</button>
+        <button type="button" class="auth-oauth-btn"><span>✖</span> Twitter ile Kayıt Ol</button>
+     </div>
+     <div class="auth-divider">veya</div>
+    <form class="auth-form vstack gap-3" method="post" novalidate>
+      @if(!ViewData.ModelState.IsValid){<div class="text-danger small">@string.Join(" ", ViewData.ModelState.Values.SelectMany(v=>v.Errors).Select(e=>e.ErrorMessage))</div>}
+        <div>
+          <label class="form-label">Görünen Ad</label>
+          <input name="DisplayName" class="form-control" placeholder="Görünen Ad" />
+        </div>
+        <div>
+          <label class="form-label">Email</label>
+          <input name="Email" type="email" class="form-control" placeholder="Email" />
+        </div>
+        <div>
+          <label class="form-label">Kullanıcı Adı</label>
+          <input name="UserName" class="form-control" placeholder="&#64;kullanici" />
+        </div>
+        <div class="position-relative">
+          <label class="form-label">Şifre</label>
+          <input name="Password" type="password" class="form-control" placeholder="Şifre" data-pass />
+          <button class="show-pass-btn" type="button" data-toggle-pass>👁</button>
+        </div>
+        <div class="position-relative">
+          <label class="form-label">Şifreyi Onayla</label>
+          <input name="PasswordConfirm" type="password" class="form-control" placeholder="Şifreyi Onayla" data-pass />
+          <button class="show-pass-btn" type="button" data-toggle-pass>👁</button>
+        </div>
+        <div class="auth-check">
+           <input type="checkbox" id="terms" required />
+           <label for="terms" class="m-0"> <a href="#">Kullanım Koşulları</a> ve <a href="#">Gizlilik Politikası</a> kabul ediyorum.</label>
+        </div>
+        <div>
+          <button class="btn btn-danger auth w-100" type="submit">Kayıt Ol</button>
+        </div>
+        @{ var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration; var siteKey = cfg?["Turnstile:SiteKey"] ?? cfg?["Cloudflare:Turnstile:SiteKey"]; var enableRegister = (cfg?["Captcha:RequireOn:Register"] ?? "false").ToLowerInvariant()=="true"; }
+        @if(enableRegister && !string.IsNullOrWhiteSpace(siteKey)){
+          <div class="mt-2"><div class="cf-turnstile" data-sitekey="@siteKey"></div></div>
+        }
+     </form>
+  </div>
+  <div class="auth-right d-none d-md-flex">
+     <partial name="~/Views/Shared/Partials/_AuthFeatures.cshtml" />
+  </div>
+</div>
+@{ var cfg2 = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration; var siteKey2 = cfg2?["Turnstile:SiteKey"] ?? cfg2?["Cloudflare:Turnstile:SiteKey"]; var enableReg2 = (cfg2?["Captcha:RequireOn:Register"] ?? "false").ToLowerInvariant()=="true"; }
+@if(enableReg2 && !string.IsNullOrWhiteSpace(siteKey2)){
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+}

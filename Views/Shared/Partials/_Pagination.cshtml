@@ -1,0 +1,17 @@
+@model (int Page,int TotalPages, string? Category, string? Q)
+@if(Model.TotalPages>1){
+<nav aria-label="Sayfalama" class="mt-4">
+ <ul class="pagination pagination-sm">
+  @{int start = Math.Max(1, Model.Page-2); int end = Math.Min(Model.TotalPages, Model.Page+2);}
+  <li class="page-item @(Model.Page==1?"disabled":"")">
+    <a class="page-link" asp-route-page="@(Model.Page-1)" asp-route-category="@Model.Category" asp-route-q="@Model.Q">«</a>
+  </li>
+  @for(int p=start;p<=end;p++){
+    <li class="page-item @(p==Model.Page?"active":"")"><a class="page-link" asp-route-page="@p" asp-route-category="@Model.Category" asp-route-q="@Model.Q">@p</a></li>
+  }
+  <li class="page-item @(Model.Page==Model.TotalPages?"disabled":"")">
+    <a class="page-link" asp-route-page="@(Model.Page+1)" asp-route-category="@Model.Category" asp-route-q="@Model.Q">»</a>
+  </li>
+ </ul>
+</nav>
+}

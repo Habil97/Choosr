@@ -1,0 +1,229 @@
+@model Choosr.Web.ViewModels.QuizDetailViewModel
+@inject Choosr.Web.Services.IQuizService QuizService
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+  ViewData["Title"] = "Sıralama Sonucu";
+  var order = (IEnumerable<Guid>)(ViewBag.Order ?? new List<Guid>());
+  var ordered = new List<Choosr.Web.ViewModels.QuizChoiceViewModel>();
+  var dict = Model.Choices.ToDictionary(c=>c.Id, c=>c);
+  foreach (var id in order)
+  {
+    if (dict.TryGetValue(id, out var c)) ordered.Add(c);
+  }
+  var similar = QuizService.GetSimilar(Model.Id, 3);
+  var latest = QuizService.GetLatest(6);
+  var fullUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}{Context.Request.QueryString}";
+  var afToken = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<meta name="request-verification-token" content="@afToken" />
+
+<section class="blind-result layout-container">
+  <div class="text-center" style="margin:.75rem auto .5rem;">
+    <div style="font-size:1.55rem;font-weight:900;letter-spacing:.06em;color:#e9efff;text-transform:uppercase;">@Model.Title</div>
+    <div style="color:#9fb2d6;font-size:.85rem;margin-top:.1rem;">Kör sıralama</div>
+  </div>
+
+  <div class="br-result-grid">
+    <div class="br-main">
+      <div class="br-result-card" id="rankCard" style="position:relative;">
+        <div class="br-head" style="justify-content:flex-start;gap:.5rem;">
+          <span class="mode-pill" style="background:#ffd54a;color:#000;border-color:transparent;font-weight:900;letter-spacing:.04em;">Kör Sıralama</span>
+        </div>
+        <ol class="rank-result-list" id="rankList">
+        @for(int i=0;i<ordered.Count;i++){
+          var c = ordered[i];
+          var w = c.ImageWidth; var h = c.ImageHeight; var wh = (w.HasValue && h.HasValue) ? $" width=\"{w}\" height=\"{h}\"" : " width=\"60\" height=\"60\"";
+          <li>
+            <span class="n">@(i+1)</span>
+            <img src="@c.ImageUrl" alt=""@Html.Raw(wh) loading="lazy" decoding="async"/>
+            <div class="meta"><div class="cap">@c.Caption</div></div>
+          </li>
+        }
+        </ol>
+        <div class="text-center no-export" style="margin-top:.75rem;">
+          <div class="reaction-bar" data-quiz="@Model.Id" style="justify-content:center;">
+            <button class="rx" data-type="like"><span class="e">👍</span><span>0</span></button>
+            <button class="rx" data-type="love"><span class="e">❤️</span><span>0</span></button>
+            <button class="rx" data-type="haha"><span class="e">😂</span><span>0</span></button>
+            <button class="rx" data-type="wow"><span class="e">😮</span><span>0</span></button>
+            <button class="rx" data-type="sad"><span class="e">😢</span><span>0</span></button>
+            <button class="rx" data-type="angry"><span class="e">😡</span><span>0</span></button>
+          </div>
+        </div>
+        <div class="br-actions text-center no-export" style="margin-top:.9rem;">
+          <a class="btn btn-xs" style="background:#ffd54a;color:#000;border:1px solid #ffcc33;font-weight:900;letter-spacing:.04em;" href="@Url.Action("Rank", "Play", new { id = Model.Id, slots = @ordered.Count })">TEKRAR OYNA?</a>
+        </div>
+        <div class="text-center no-export" style="margin-top:.6rem;">
+          <div class="qd-share" style="display:inline-flex;align-items:center;gap:.45rem;background:rgba(255,213,74,.08);border:1px solid rgba(255,213,74,.45);padding:.45rem .6rem;border-radius:14px;box-shadow:0 8px 22px -10px rgba(0,0,0,.45);">
+            <span style="font-weight:800;color:#ffd54a;">PAYLAŞ:</span>
+            <a class="si" target="_blank" rel="noopener" href="https://wa.me/?text=@Uri.EscapeDataString(fullUrl)">🟢</a>
+            <a class="si" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=@Uri.EscapeDataString(Model.Title)&url=@Uri.EscapeDataString(fullUrl)">𝕏</a>
+            <a class="si" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(fullUrl)">f</a>
+            <a class="si" target="_blank" rel="noopener" href="https://www.reddit.com/submit?url=@Uri.EscapeDataString(fullUrl)&title=@Uri.EscapeDataString(Model.Title)">r</a>
+            <a class="si" id="shareCopyInline" href="#" title="Bağlantıyı kopyala">🔗</a>
+          </div>
+        </div>
+  <button id="btnDownloadCard" class="btn pv-dl no-export" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#ffd54a;color:#000;border:1px solid #ffcc33;font-weight:900;letter-spacing:.04em;border-radius:12px;padding:.6rem 1rem;box-shadow:0 10px 26px -10px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:.2s opacity;" aria-label="Sıralamayı görsel olarak indir">⬇ İNDİR</button>
+      </div>
+
+      <div class="br-latest">
+        <div class="section-title" style="margin:.5rem 0 1rem;">En Son Quizler</div>
+        <div id="latestGrid" class="quiz-cards">
+          @foreach(var q in latest){
+            @await Html.PartialAsync("~/Views/Shared/Partials/_QuizCardHome.cshtml", q)
+          }
+        </div>
+  <div class="text-center" style="margin-top:.75rem;"><button id="btnMoreLatest" class="btn btn-outline btn-xs" aria-label="Daha fazla en son quiz yükle">Daha fazla yükle</button></div>
+      </div>
+    </div>
+
+    <aside class="br-side">
+      <div class="section-title" style="margin-bottom:.5rem;">Paylaş</div>
+      <div class="br-share card-like">
+  <div class="br-preview" id="rankPreview" style="position:relative;">
+          <div class="pv-title" style="text-transform:uppercase;letter-spacing:.06em;">@Model.Title</div>
+          <ol class="pv-list">
+          @for(int i=0;i<Math.Min(5, ordered.Count); i++){
+            var c = ordered[i];
+            <li><span class="n">@(i+1)</span><span class="t">@c.Caption</span></li>
+          }
+          </ol>
+          <button id="btnDownload" class="btn pv-dl" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#ffd54a;color:#000;border:1px solid #ffcc33;font-weight:900;letter-spacing:.04em;border-radius:12px;padding:.6rem 1rem;box-shadow:0 10px 26px -10px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:.2s opacity;">⬇ İNDİR</button>
+        </div>
+        <div class="br-link">
+          <input id="shareLink" class="form-control" value="@fullUrl" />
+          <button id="btnCopyLink" class="btn btn-xs" style="background:#ffd54a;color:#000;border:1px solid #ffcc33;font-weight:900;letter-spacing:.04em;display:inline-flex;align-items:center;gap:.35rem;">📋 KOPYALA</button>
+        </div>
+        <div class="br-share-row br-share-row-lg">
+          <a class="qd-share si" target="_blank" rel="noopener" href="https://wa.me/?text=@Uri.EscapeDataString(fullUrl)">🟢</a>
+          <a class="qd-share si" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=@Uri.EscapeDataString(Model.Title)&url=@Uri.EscapeDataString(fullUrl)">𝕏</a>
+          <a class="qd-share si" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=@Uri.EscapeDataString(fullUrl)">f</a>
+          <a class="qd-share si" target="_blank" rel="noopener" href="https://www.reddit.com/submit?url=@Uri.EscapeDataString(fullUrl)&title=@Uri.EscapeDataString(Model.Title)">r</a>
+        </div>
+      </div>
+
+      <div class="card-like" style="margin-top:1rem;">
+        <div class="title">Benzer Quizler</div>
+        <div id="similarGrid" class="quiz-cards" style="grid-template-columns:1fr;">
+          @foreach(var q in similar){
+            @await Html.PartialAsync("~/Views/Shared/Partials/_QuizCardHome.cshtml", q)
+          }
+        </div>
+  <div class="text-center" style="margin-top:.75rem;"><button id="btnMoreSimilar" class="btn btn-outline btn-xs" aria-label="Daha fazla benzer quiz yükle">Daha fazla yükle</button></div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+@section Scripts{
+<script>
+  (function(){
+    const latestGrid = document.getElementById('latestGrid');
+    const btnMoreLatest = document.getElementById('btnMoreLatest');
+    const btnCopyLink = document.getElementById('btnCopyLink');
+    const btnCopyInline = document.getElementById('shareCopyInline');
+    const shareLink = document.getElementById('shareLink');
+    const btnDownload = document.getElementById('btnDownload');
+    const btnDownloadCard = document.getElementById('btnDownloadCard');
+    const similarGrid = document.getElementById('similarGrid');
+    const btnMoreSimilar = document.getElementById('btnMoreSimilar');
+    const quizId = '@Model.Id';
+  const anti = document.querySelector('meta[name="request-verification-token"]')?.content || '';
+    let latestCount = @latest.Count();
+    let similarCount = @similar.Count();
+
+    btnCopyLink?.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(shareLink.value); btnCopyLink.textContent='Kopyalandı'; setTimeout(()=>btnCopyLink.textContent='Kopyala', 1200); }catch{}
+    });
+    btnCopyInline?.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      try{ await navigator.clipboard.writeText(shareLink?.value || window.location.href); btnCopyInline.textContent='✅'; setTimeout(()=>btnCopyInline.textContent='🔗', 900); }catch{}
+    });
+    // Dynamic load of html2canvas then export the ranking as image
+    function ensureHtml2Canvas(){
+      return new Promise((resolve,reject)=>{
+        if(window.html2canvas){ resolve(window.html2canvas); return; }
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        s.onload=()=> resolve(window.html2canvas);
+        s.onerror=()=> reject(new Error('html2canvas yüklenemedi'));
+        document.head.appendChild(s);
+      });
+    }
+    btnDownload?.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      try{
+        await ensureHtml2Canvas();
+        const card = document.getElementById('rankCard');
+        if(!card){ window.print?.(); return; }
+        // Hide elements marked as no-export during capture
+        const hidden=[]; document.querySelectorAll('.no-export').forEach(el=>{ hidden.push({el,display:el.style.display}); el.style.display='none'; });
+        const canvas = await window.html2canvas(card, { backgroundColor: null, scale: 2, useCORS: true });
+        hidden.forEach(h=> h.el.style.display=h.display);
+        const link = document.createElement('a'); link.download='siralama.png'; link.href = canvas.toDataURL('image/png'); link.click();
+      }catch(err){ console.warn(err); window.print?.(); }
+    });
+
+    btnDownloadCard?.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      try{
+        await ensureHtml2Canvas();
+        const card = document.getElementById('rankCard');
+        if(!card){ window.print?.(); return; }
+        const hidden=[]; document.querySelectorAll('.no-export').forEach(el=>{ hidden.push({el,display:el.style.display}); el.style.display='none'; });
+        const canvas = await window.html2canvas(card, { backgroundColor: null, scale: 2, useCORS: true });
+        hidden.forEach(h=> h.el.style.display=h.display);
+        const link = document.createElement('a'); link.download='siralama.png'; link.href = canvas.toDataURL('image/png'); link.click();
+      }catch(err){ console.warn(err); window.print?.(); }
+    });
+
+    // Reactions
+    const rxBar = document.querySelector('.reaction-bar');
+    async function loadReactions(){
+      try{
+        const r = await fetch('@Url.Action("Reactions","Quiz")/' + quizId);
+        if(!r.ok) return; const data = await r.json();
+        const vals = [data.like||0,data.love||0,data.haha||0,data.wow||0,data.sad||0,data.angry||0];
+        rxBar?.querySelectorAll('.rx span:last-child')?.forEach((el,i)=> el.textContent = vals[i] ?? 0);
+        // mark active if available
+        rxBar?.querySelectorAll('.rx').forEach(b=> b.classList.remove('active'));
+        if(data.my){ const btn = rxBar?.querySelector(`.rx[data-type="${data.my}"]`); btn?.classList.add('active'); }
+      }catch{}
+    }
+    rxBar?.addEventListener('click', async (e)=>{
+      const btn = e.target.closest?.('.rx'); if(!btn) return; e.preventDefault();
+      const type = btn.dataset.type; if(!type) return;
+      try{
+        const r = await fetch('@Url.Action("React","Quiz")/' + quizId, { method:'POST', headers:{ 'Content-Type':'application/x-www-form-urlencoded', 'X-Requested-With':'fetch', 'RequestVerificationToken': anti }, body: 'type=' + encodeURIComponent(type) });
+        if(r.status === 401){ alert('Reaksiyon için giriş yapmalısın.'); return; }
+        if(!r.ok){ console.warn('React failed', r.status); return; }
+        await loadReactions();
+      }catch{}
+    });
+    loadReactions();
+
+    btnMoreLatest?.addEventListener('click', async ()=>{
+      try{
+        const resp = await fetch('@Url.Action("LatestCards","Quiz")?skip=' + latestCount + '&take=6', { headers: { 'X-Requested-With': 'fetch' } });
+        if(!resp.ok) return; const html = await resp.text();
+        const tmp = document.createElement('div'); tmp.innerHTML = html; const count = tmp.children.length; 
+        while(tmp.firstChild){ latestGrid.appendChild(tmp.firstChild); }
+        latestCount += count;
+        if(count < 6){ btnMoreLatest.disabled = true; btnMoreLatest.textContent = 'Hepsi yüklendi'; }
+      }catch{}
+    });
+
+    btnMoreSimilar?.addEventListener('click', async ()=>{
+      try{
+        const resp = await fetch('@Url.Action("SimilarCards","Quiz")?id=' + encodeURIComponent(quizId) + '&skip=' + similarCount + '&take=6', { headers: { 'X-Requested-With': 'fetch' } });
+        if(!resp.ok) return; const html = await resp.text();
+        const tmp = document.createElement('div'); tmp.innerHTML = html; const count = tmp.children.length;
+        while(tmp.firstChild){ similarGrid.appendChild(tmp.firstChild); }
+        similarCount += count;
+        if(count < 6){ btnMoreSimilar.disabled = true; btnMoreSimilar.textContent = 'Hepsi yüklendi'; }
+      }catch{}
+    });
+  })();
+</script>
+}

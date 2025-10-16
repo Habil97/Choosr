@@ -1,0 +1,44 @@
+@model Choosr.Domain.Models.UserProfile
+@{
+  ViewData["Title"] = Model.DisplayName;
+}
+
+<section class="layout-container py-4">
+  <div class="profile-layout">
+    <aside class="profile-sidebar">
+      <div class="profile-card">
+  <div class="avatar-lg"><img src="@(Model.AvatarUrl??"/favicon.ico")" alt=""/></div>
+        <div class="profile-names">
+          <div class="prof-handle">@Model.UserName</div>
+          <div class="prof-name">@Model.DisplayName</div>
+        </div>
+      </div>
+      @{
+        var badges = ViewBag.Badges as IEnumerable<Choosr.Web.Services.UserBadge> ?? Enumerable.Empty<Choosr.Web.Services.UserBadge>();
+      }
+      @if(badges.Any()){
+        <div class="mt-2 d-flex flex-wrap gap-2">
+          @foreach(var b in badges){
+            <span class="badge rounded-pill bg-warning text-dark" title="@b.Label">@b.Icon <span class="ms-1">@b.Level</span></span>
+          }
+        </div>
+      }
+    </aside>
+    <section class="profile-content">
+      <h1 class="profile-title">@Model.DisplayName</h1>
+      <p class="profile-sub">Oluşturduğu herkese açık quizler</p>
+      @{
+        var created = ViewBag.Created as IEnumerable<Choosr.Web.ViewModels.QuizCardViewModel> ?? Enumerable.Empty<Choosr.Web.ViewModels.QuizCardViewModel>();
+      }
+      @if(!created.Any()){
+        <div class="empty-box">Henüz herkese açık quiz yok.</div>
+      } else {
+        <div class="quiz-cards">
+          @foreach(var q in created){
+            <partial name="~/Views/Shared/Partials/_QuizCardHome.cshtml" model="q" />
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>

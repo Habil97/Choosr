@@ -1,0 +1,70 @@
+@model Choosr.Web.ViewModels.QuizDetailViewModel
+@{
+  ViewData["Title"] = "Kör Sıralama";
+  var slots = (int?)(ViewBag.Slots) ?? 5;
+  var totalSlots = Math.Min(slots, (Model.Choices?.Count() ?? 0));
+}
+
+@section Head{
+  <link rel="preconnect" href="https://img.youtube.com" crossorigin>
+  <link rel="preconnect" href="https://www.youtube.com" crossorigin>
+  <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
+  <link rel="preconnect" href="https://s.ytimg.com" crossorigin>
+}
+<section class="blind-play">
+  <script>
+    // sayfa özel body class: global header'ı gizle
+    document.addEventListener('DOMContentLoaded', function(){ document.body.classList.add('play-hide-global-header'); });
+  </script>
+  <div class="play-topbar">
+    <div class="pt-inner">
+      <div class="pt-left">
+        <a href="@Url.Action("Detail","Quiz", new { id = Model.Id })" class="btn-ico" title="Çıkış / Geri">
+          <span class="emoji">←</span>
+        </a>
+      </div>
+      <div class="pt-center">
+        <div class="pt-title">@Model.Title</div>
+        @if(!string.IsNullOrWhiteSpace(Model.Description)){
+          <div class="pt-desc">@Model.Description</div>
+        }
+      </div>
+      <div class="pt-right">
+        <button id="btnUndo" class="btn-ico" title="Geri al" disabled><span class="emoji">↶</span></button>
+        <button id="btnRandom" class="btn-ico" title="Hızlı spin"><span class="emoji">🎲</span></button>
+        <button id="btnShare" class="btn-ico" title="Paylaş"><span class="emoji">📤</span></button>
+        <button id="btnFullscreen" class="btn-ico" title="Tam ekran"><span class="emoji">⤢</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rank-bg" id="rankBg" aria-hidden="true"></div>
+
+  <div class="layout-container" style="position:relative; z-index:1; padding-top:1rem; padding-bottom:1rem;">
+  <div class="blind-grid">
+    <aside class="blind-left">
+      <div class="slot-col">
+        @for(int i=1;i<=totalSlots;i++){
+          <div class="slot" data-index="@i"><span class="n">@i</span></div>
+        }
+      </div>
+    </aside>
+    <main class="blind-center">
+      <div class="current-card accent">
+        <div class="img-wrap">
+          <div id="bsMedia"></div>
+        </div>
+        <div class="cap cap-pill" id="bsCap">...</div>
+      </div>
+    </main>
+  </div>
+  </div>
+</section>
+
+<script id="choicesData" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize((Model.Choices ?? System.Linq.Enumerable.Empty<Choosr.Web.ViewModels.QuizChoiceViewModel>()).Select(c=> new { id = c.Id, image = c.ImageUrl, imageWidth = c.ImageWidth, imageHeight = c.ImageHeight, caption = c.Caption, youtube = c.YoutubeUrl })))</script>
+@section Scripts{
+<script nonce="@(Context.Items["CspNonce"])">window.__playData = { quizId: '@Model.Id', recordRankUrl: '@Url.Action("RecordRank","Play")/@Model.Id', rankResultBase: '@Url.Action("RankResult","Play")/@Model.Id' };</script>
+<script nonce="@(Context.Items["CspNonce"])" src="/js/playCommon.js" defer></script>
+<script nonce="@(Context.Items["CspNonce"])" src="/js/playRank.js" defer></script>
+}
+

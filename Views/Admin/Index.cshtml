@@ -1,0 +1,52 @@
+@model Choosr.Web.ViewModels.AdminDashboardViewModel
+@{
+  ViewData["Title"] = "Admin Dashboard";
+}
+<h1 class="mb-3">Admin Dashboard</h1>
+
+<div class="mb-3 d-flex justify-content-end">
+  <a class="btn btn-warning btn-sm" asp-controller="Admin" asp-action="ModerationQueue">
+    Moderasyon Kuyruğu
+  </a>
+  @* Optional: surface TempData messages *@
+  @if(TempData["Msg"] != null){<span class="ms-2 text-muted">@TempData["Msg"]</span>}
+  </div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="glass-box p-3">
+      <h6 class="section-title">Günlük Yeni Quiz (14g)</h6>
+      <table class="table table-sm table-striped align-middle mb-0">
+        <thead><tr><th>Tarih</th><th class="text-end">Sayı</th></tr></thead>
+        <tbody>
+          @foreach(var p in Model.DailyNewQuizzes){
+            <tr><td>@p.Date.ToString("yyyy-MM-dd")</td><td class="text-end">@p.Count</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="glass-box p-3">
+      <h6 class="section-title">Günlük Aktif Kullanıcı (14g)</h6>
+      <table class="table table-sm table-striped align-middle mb-0">
+        <thead><tr><th>Tarih</th><th class="text-end">Kullanıcı</th></tr></thead>
+        <tbody>
+          @foreach(var p in Model.DailyActiveUsers){
+            <tr><td>@p.Date.ToString("yyyy-MM-dd")</td><td class="text-end">@p.Count</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-12">
+    <div class="glass-box p-3">
+      <h6 class="section-title">En Popüler Etiketler</h6>
+      <div class="d-flex flex-wrap gap-2">
+        @foreach(var t in Model.TopTags){
+          <span class="badge rounded-pill bg-secondary">#@t.Name <span class="ms-1">(@t.Count)</span></span>
+        }
+      </div>
+    </div>
+  </div>
+</div>

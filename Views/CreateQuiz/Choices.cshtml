@@ -1,0 +1,67 @@
+@model Choosr.Web.ViewModels.CreateQuizChoicesStepViewModel
+@{
+    ViewData["Title"] = "Quiz Oluştur - Seçimler";
+  var cfg = Context.RequestServices.GetService(typeof(IConfiguration)) as IConfiguration;
+  var turnstileSiteKey = cfg?["Turnstile:SiteKey"] ?? cfg?["Cloudflare:Turnstile:SiteKey"];
+}
+<div class="wizard-steps mb-4"><span class="done">1</span><span class="active">2</span><span>3</span></div>
+<h1 style="font-size:1.3rem;" class="mb-3">Seçimler</h1>
+<form method="post" enctype="multipart/form-data" class="vstack gap-3" id="choicesForm">
+  <input type="hidden" name="IdemToken" value="@((string)ViewBag.IdemToken ?? string.Empty)" />
+  <input type="hidden" id="draftIdInput" name="DraftId" value="" />
+  @{
+    var cover = (string?)ViewBag.Cover ?? "/favicon.ico";
+  }
+  <div class="glass-box p-3 d-flex align-items-center gap-3">
+    <div style="width:160px;height:90px;overflow:hidden;border-radius:8px;border:1px solid var(--c-border);background:#000;">
+      <img id="step2CoverPreview" src="@cover" alt="Kapak" style="width:100%;height:100%;object-fit:cover;" />
+    </div>
+    <div class="vstack gap-1">
+      <strong style="font-size:.8rem;">Kapak Görseli</strong>
+      <div class="d-flex gap-2 align-items-center">
+      <button type="button" class="btn btn-sm btn-outline-warning" id="changeCoverBtn" aria-label="Kapak görselini değiştir">Kapağı Değiştir</button>
+        <input type="file" class="d-none" id="coverOverride" name="CoverOverride" accept="image/*" />
+      </div>
+      <small class="text-muted">İstersen burada kapağı güncelleyebilirsin.</small>
+    </div>
+  </div>
+  <div class="btn-group" role="group">
+    <input type="radio" class="btn-check" name="Mode" id="modeImages" value="images" checked />
+    <label class="btn btn-outline-warning btn-sm" for="modeImages">Resimler</label>
+    <input type="radio" class="btn-check" name="Mode" id="modeVideos" value="videos" />
+    <label class="btn btn-outline-warning btn-sm" for="modeVideos">Videolar</label>
+  </div>
+  <div id="imageUploadArea" class="upload-box p-4 text-center border rounded-3">
+  <p class="mb-1">Çoklu resim yükleme: tıklayın veya sürükleyin</p>
+  <small class="text-muted">JPG, PNG, GIF, WEBP (Max 8MB/seçim)</small>
+  <input type="file" multiple class="d-none" id="fileInput" name="Files" accept="image/*" />
+  <button type="button" class="btn btn-sm btn-secondary mt-2" id="selectFiles" aria-label="Resim dosyası seç">Dosya Seç</button>
+    <div id="uploadHint" class="small text-muted mt-2">Sürükleyip bıraktığınızda otomatik yüklenecek.</div>
+  </div>
+  <div id="videoLinksArea" class="d-none">
+    <label class="form-label">YouTube Linkleri (Her satır bir link)</label>
+    <textarea id="videoLinks" class="form-control form-control-sm" rows="6" placeholder="https://www.youtube.com/watch?v=..."></textarea>
+  <button type="button" id="addVideos" class="btn btn-sm btn-outline-warning mt-2" aria-label="Video linklerini ekle">Video Ekle</button>
+  </div>
+  <div class="d-flex justify-content-between align-items-center">
+    <h5 class="section-title m-0">Seçimler (<span id="count">0</span>)</h5>
+  <button type="button" class="btn btn-sm btn-outline-light" id="removeAll" aria-label="Tüm seçimleri kaldır">Tümünü Kaldır</button>
+  </div>
+  <div class="choices-grid" id="choicesGrid"></div>
+  <input type="hidden" name="Manifest" id="manifestInput" />
+  <div class="d-flex gap-2">
+  <a asp-action="Details" class="btn btn-outline-light btn-sm" aria-label="Önceki adıma dön">← Önceki</a>
+  @if(!string.IsNullOrWhiteSpace(turnstileSiteKey)){
+    <div class="cf-turnstile" data-sitekey="@turnstileSiteKey"></div>
+  }
+  <button class="btn btn-outline-warning btn-sm" type="submit" name="actionType" value="save-draft" aria-label="Quiz taslağını kaydet">Taslak Kaydet</button>
+  <button class="btn btn-warning btn-sm" type="submit" name="actionType" value="finish" aria-label="Quiz oluştur ve yayınla">Quiz Oluştur</button>
+  </div>
+  <div class="text-danger" asp-validation-summary="ModelOnly"></div>
+</form>
+@section Scripts{
+<script src="/js/createQuizChoices.js" nonce="@(Context.Items["CspNonce"])" defer></script>
+@if(!string.IsNullOrWhiteSpace(turnstileSiteKey)){
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+}
+}

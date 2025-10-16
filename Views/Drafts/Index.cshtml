@@ -1,0 +1,40 @@
+@model IEnumerable<Choosr.Web.ViewModels.DraftViewModel>
+@{
+  ViewData["Title"] = "Taslaklarım";
+}
+
+<section class="layout-container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <div class="text-uppercase" style="color:#ffd54a;font-weight:900;letter-spacing:.06em;">Oluşturucu</div>
+      <h1 class="m-0" style="font-weight:800;">Taslaklarım</h1>
+    </div>
+    <a class="btn btn-sm btn-warning text-dark" asp-controller="CreateQuiz" asp-action="Details">+ Yeni Quiz</a>
+  </div>
+
+  @if(!Model.Any()){
+    <div class="text-muted">Hiç taslak yok.</div>
+  } else {
+    <div class="row g-3">
+      @foreach(var d in Model){
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card bg-dark text-light h-100" style="border:1px solid rgba(255,255,255,.08);">
+            <img class="card-img-top" src="@(string.IsNullOrWhiteSpace(d.CoverImageUrl)?"/img/sample1.jpg":d.CoverImageUrl)" alt="" style="height:160px;object-fit:cover;" />
+            <div class="card-body">
+              <h5 class="card-title">@(!string.IsNullOrWhiteSpace(d.Title)?d.Title:"(Başlıksız)")</h5>
+              <div class="small text-muted mb-2">@d.Category • @(d.Visibility=="public"?"Herkese açık":"Liste dışı")</div>
+              <div class="small text-muted">Güncellendi: @d.UpdatedAt.ToLocalTime().ToString("g")</div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+              <form method="post" asp-action="Delete" asp-controller="Drafts">
+                <input type="hidden" name="id" value="@d.Id" />
+                <button class="btn btn-sm btn-outline-danger" type="submit">Sil</button>
+              </form>
+              <a class="btn btn-sm btn-outline-secondary" asp-controller="CreateQuiz" asp-action="Details" asp-route-draftId="@d.Id">Düzenle</a>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
